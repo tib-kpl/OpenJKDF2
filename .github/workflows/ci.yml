@@ -1,9 +1,10 @@
 name: CI
 
-# One pipeline per commit: the platform builds run as parallel jobs, then on
-# master the Linux, macOS and Windows packages and the signed Android APK are
-# published as a build-<commit count> release on
-# https://github.com/tib-kpl/OpenJKDF2/releases.
+# One pipeline per commit: the platform builds run as parallel jobs. On master,
+# each job adds its package (Linux, macOS, Windows, signed Android APK) to the
+# build-<run number> release on https://github.com/tib-kpl/OpenJKDF2/releases
+# as soon as it is done, so a slow or failing platform never holds back the
+# others.
 
 on:
   push:
@@ -26,6 +27,9 @@ env:
   # between runs by the ccache-action step of each job.
   CMAKE_C_COMPILER_LAUNCHER: ccache
   CMAKE_CXX_COMPILER_LAUNCHER: ccache
+  # Release that every job of this run uploads into
+  RELEASE_TAG: build-${{ github.run_number }}
+  IS_RELEASE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
 
 jobs:
   linux:
@@ -76,6 +80,17 @@ jobs:
         with:
           name: linux
           path: OpenJKDF2-linux-x86_64.tar.gz
+      - name: Add to release
+        if: env.IS_RELEASE == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Whichever job finishes first creates the release; a concurrent
+          # create fails on the existing tag, which is fine.
+          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
+            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"                --title "$RELEASE_TAG (${GITHUB_SHA:0:8})" --generate-notes ||
+            gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
+          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber OpenJKDF2-linux-x86_64.tar.gz
 
   macos:
     name: macOS
@@ -107,6 +122,17 @@ jobs:
         with:
           name: macos
           path: OpenJKDF2-macos-arm64.zip
+      - name: Add to release
+        if: env.IS_RELEASE == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Whichever job finishes first creates the release; a concurrent
+          # create fails on the existing tag, which is fine.
+          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
+            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"                --title "$RELEASE_TAG (${GITHUB_SHA:0:8})" --generate-notes ||
+            gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
+          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber OpenJKDF2-macos-arm64.zip
 
   win64:
     name: Windows x64
@@ -166,6 +192,17 @@ jobs:
         with:
           name: win64
           path: OpenJKDF2-win64.zip
+      - name: Add to release
+        if: env.IS_RELEASE == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Whichever job finishes first creates the release; a concurrent
+          # create fails on the existing tag, which is fine.
+          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
+            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"                --title "$RELEASE_TAG (${GITHUB_SHA:0:8})" --generate-notes ||
+            gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
+          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber OpenJKDF2-win64.zip
 
   android:
     name: Android arm64
@@ -209,7 +246,6 @@ jobs:
         env:
           OPENJKDF2_KEYSTORE_B64: ${{ secrets.OPENJKDF2_KEYSTORE_B64 }}
           OPENJKDF2_KEYSTORE_PASSWORD: ${{ secrets.OPENJKDF2_KEYSTORE_PASSWORD }}
-          IS_RELEASE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
         run: |
           if [ -n "$OPENJKDF2_KEYSTORE_B64" ]; then
             export OPENJKDF2_KEYSTORE_FILE="$RUNNER_TEMP/openjkdf2-release.jks"
@@ -235,35 +271,14 @@ jobs:
         with:
           name: android
           path: OpenJKDF2-android-arm64-v8a.apk
-
-  release:
-    name: Publish release
-    needs: [linux, macos, win64, android]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/download-artifact@v4
-        with:
-          merge-multiple: true
-          path: dist
-      - name: Compute tag
-        id: tag
+      - name: Add to release
+        if: env.IS_RELEASE == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo "tag=build-$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
-          echo "short=$(git rev-parse --short=8 HEAD)" >> "$GITHUB_OUTPUT"
-      - name: Publish release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          target_commitish: ${{ github.sha }}
-          name: ${{ steps.tag.outputs.tag }} (${{ steps.tag.outputs.short }})
-          make_latest: true
-          generate_release_notes: true
-          files: |
-            dist/OpenJKDF2-linux-x86_64.tar.gz
-            dist/OpenJKDF2-macos-arm64.zip
-            dist/OpenJKDF2-win64.zip
-            dist/OpenJKDF2-android-arm64-v8a.apk
+          # Whichever job finishes first creates the release; a concurrent
+          # create fails on the existing tag, which is fine.
+          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
+            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"                --title "$RELEASE_TAG (${GITHUB_SHA:0:8})" --generate-notes ||
+            gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
+          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber OpenJKDF2-android-arm64-v8a.apk
