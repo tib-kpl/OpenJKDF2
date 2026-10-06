@@ -53,3 +53,7 @@ copyForOBJ $EXE
 if [ -f $GNS ]; then
     copyForOBJ $GNS
 fi
+
+# copyForOBJ's status is that of the last DLL lookup, which fails for Windows
+# system DLLs (KERNEL32.dll, ...) that are never on the build host: not an error.
+exit 0
