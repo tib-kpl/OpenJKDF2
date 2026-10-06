@@ -2,7 +2,7 @@ name: CI
 
 # One pipeline per commit: the platform builds run as parallel jobs. On master,
 # each job adds its package (Linux, macOS, Windows, signed Android APK) to the
-# build-<run number> release on https://github.com/tib-kpl/OpenJKDF2/releases
+# build-<run number, zero-padded> release on https://github.com/tib-kpl/OpenJKDF2/releases
 # as soon as it is done, so a slow or failing platform never holds back the
 # others.
 
@@ -27,8 +27,6 @@ env:
   # between runs by the ccache-action step of each job.
   CMAKE_C_COMPILER_LAUNCHER: ccache
   CMAKE_CXX_COMPILER_LAUNCHER: ccache
-  # Release that every job of this run uploads into
-  RELEASE_TAG: build-${{ github.run_number }}
   IS_RELEASE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
 
 jobs:
@@ -85,6 +83,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Release that every job of this run uploads into. Zero-padded:
+          # GitHub lists releases by tag name, so build-9 would sort above build-10.
+          RELEASE_TAG=$(printf 'build-%04d' "$GITHUB_RUN_NUMBER")
           # Whichever job finishes first creates the release; a concurrent
           # create fails on the existing tag, which is fine.
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
@@ -127,6 +128,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Release that every job of this run uploads into. Zero-padded:
+          # GitHub lists releases by tag name, so build-9 would sort above build-10.
+          RELEASE_TAG=$(printf 'build-%04d' "$GITHUB_RUN_NUMBER")
           # Whichever job finishes first creates the release; a concurrent
           # create fails on the existing tag, which is fine.
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
@@ -197,6 +201,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Release that every job of this run uploads into. Zero-padded:
+          # GitHub lists releases by tag name, so build-9 would sort above build-10.
+          RELEASE_TAG=$(printf 'build-%04d' "$GITHUB_RUN_NUMBER")
           # Whichever job finishes first creates the release; a concurrent
           # create fails on the existing tag, which is fine.
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
@@ -276,6 +283,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Release that every job of this run uploads into. Zero-padded:
+          # GitHub lists releases by tag name, so build-9 would sort above build-10.
+          RELEASE_TAG=$(printf 'build-%04d' "$GITHUB_RUN_NUMBER")
           # Whichever job finishes first creates the release; a concurrent
           # create fails on the existing tag, which is fine.
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
