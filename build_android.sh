@@ -37,8 +37,9 @@ cp $OPENJKDF2_BUILD_DIR/openal/libopenal.so app/src/main/jniLibs/arm64-v8a/libop
 cp $OPENJKDF2_BUILD_DIR/SDL/libSDL3.so app/src/main/jniLibs/arm64-v8a/libSDL3.so &&
 cp $OPENJKDF2_BUILD_DIR/SDL_mixer/libSDL3_mixer.so app/src/main/jniLibs/arm64-v8a/libSDL3_mixer.so &&
 ./gradlew assembleDebug && 
-./gradlew installDebug && 
+./gradlew installJkDebug installMotsDebug && 
 popd
 
-cp $OPENJKDF2_BUILD_DIR/../packaging/android-project/app/build/outputs/apk/debug/app-debug.apk android-OpenJKDF2-arm64-v8a.apk
+cp $OPENJKDF2_BUILD_DIR/../packaging/android-project/app/build/outputs/apk/jk/debug/app-jk-debug.apk android-OpenJKDF2-arm64-v8a.apk
+cp $OPENJKDF2_BUILD_DIR/../packaging/android-project/app/build/outputs/apk/mots/debug/app-mots-debug.apk android-OpenMoTS-arm64-v8a.apk
 

@@ -93,14 +93,14 @@
                 <data android:mimeType="*/*" />
             </intent-filter>
             -->
-            <!-- Long-press app shortcuts (see res/xml/shortcuts.xml) -->
-            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
 
-        <!-- MoTS launcher entry. Runs in a separate process because SDL only
-             supports one instance per process, and in a separate task (via
-             taskAffinity) so it shows up separately in the recents picker and
-             can be closed independently of the main game. -->
+        <!-- MoTS entry. Its launcher icon comes from the "mots" product flavor
+             (src/mots/AndroidManifest.xml), a separate app (org.openjkdf2.mots)
+             so that launchers showing one icon per package (e.g. Cocoon) list
+             both games. Runs in a separate process because SDL only supports
+             one instance per process, and in a separate task (via taskAffinity)
+             so it shows up separately in the recents picker. -->
         <activity android:name="MotsActivity"
             android:label="@string/app_name_mots"
             android:icon="@mipmap/ic_launcher_mots"
@@ -114,7 +114,6 @@
             >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
                 <!-- Some shortcut-maker tools only resolve activities that
                      also declare DEFAULT -->
                 <category android:name="android.intent.category.DEFAULT" />

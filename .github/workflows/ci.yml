@@ -265,12 +265,16 @@ jobs:
           cd packaging/android-project
           chmod +x gradlew
           ./gradlew --no-daemon assembleDebug
-          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/OpenJKDF2-android-arm64-v8a.apk"
+          # Two apps: OpenJKDF2 (org.openjkdf2.app) and OpenMoTS (org.openjkdf2.mots)
+          cp app/build/outputs/apk/jk/debug/app-jk-debug.apk "$GITHUB_WORKSPACE/OpenJKDF2-android-arm64-v8a.apk"
+          cp app/build/outputs/apk/mots/debug/app-mots-debug.apk "$GITHUB_WORKSPACE/OpenMoTS-android-arm64-v8a.apk"
           rm -f "$RUNNER_TEMP/openjkdf2-release.jks"
       - uses: actions/upload-artifact@v4
         with:
           name: android
-          path: OpenJKDF2-android-arm64-v8a.apk
+          path: |
+            OpenJKDF2-android-arm64-v8a.apk
+            OpenMoTS-android-arm64-v8a.apk
       - name: Add to release
         if: env.IS_RELEASE == 'true'
         env:
@@ -281,4 +285,4 @@ jobs:
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
             gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"                --title "$RELEASE_TAG (${GITHUB_SHA:0:8})" --generate-notes ||
             gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
-          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber OpenJKDF2-android-arm64-v8a.apk
+          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber OpenJKDF2-android-arm64-v8a.apk OpenMoTS-android-arm64-v8a.apk
