@@ -112,11 +112,17 @@ add_compile_definitions(
     # engine's char16_t. _U (char16_t/u"...") is for the engine (src/version.c).
     OPENJKDF2_RELEASE_VERSION_STRING_W=L\"v${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}\"
     OPENJKDF2_RELEASE_VERSION_STRING_U=u\"v${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}\"
+    QOL_IMPROVEMENTS
+)
+
+# The commit hash changes on every commit: keep it on the one file that uses it,
+# so the other sources' compile flags (and compiler caches such as ccache) stay
+# stable from one commit to the next.
+set_property(SOURCE ${PROJECT_SOURCE_DIR}/src/version.c APPEND PROPERTY COMPILE_DEFINITIONS
     OPENJKDF2_RELEASE_COMMIT=\"${OPENJKDF2_RELEASE_COMMIT}\"
     OPENJKDF2_RELEASE_COMMIT_SHORT=\"${OPENJKDF2_RELEASE_COMMIT_SHORT}\"
     OPENJKDF2_RELEASE_COMMIT_U=u\"${OPENJKDF2_RELEASE_COMMIT}\"
     OPENJKDF2_RELEASE_COMMIT_SHORT_U=u\"${OPENJKDF2_RELEASE_COMMIT_SHORT}\"
-    QOL_IMPROVEMENTS
 )
 
 set(CMAKE_C_STANDARD 11)
