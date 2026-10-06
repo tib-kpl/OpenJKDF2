@@ -17,7 +17,9 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
-set(PLAT_ANDROID_ARM64 TRUE)
+# Cache entry (like toolchain_mingw.cmake): CMakeLists.txt declares PLAT_* as
+# FALSE cache entries, which would otherwise hide a plain variable.
+set(PLAT_ANDROID_ARM64 TRUE CACHE BOOL "Android AArch64")
 set(ANDROID TRUE)
 
 message( STATUS "Android AArch64/ARMv8a toolchain invoked" )
