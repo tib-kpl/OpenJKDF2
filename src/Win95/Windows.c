@@ -246,13 +246,61 @@ int Windows_GdiHandler(HWND a1, UINT msg, WPARAM wParam, HWND a4, LRESULT *a5)
     return v5;
 }
 
+#ifdef SDL2_RENDER
+// Added: SDL message boxes take UTF-8, but the game's strings are UTF-16 and
+// localized (e.g. "Impossible de définir le joueur"). stdString_WcharToChar
+// truncates each char to 8 bits, which produced invalid UTF-8 -- on Android, JNI
+// aborts the app on it instead of showing the message.
+static void Windows_WcharToUtf8(char* pOut, size_t outSz, const char16_t* pIn)
+{
+    size_t o = 0;
+    if (!outSz) return;
+    for (size_t i = 0; pIn[i]; i++)
+    {
+        uint32_t c = pIn[i];
+        if (c >= 0xD800 && c <= 0xDBFF && pIn[i+1] >= 0xDC00 && pIn[i+1] <= 0xDFFF) {
+            c = 0x10000 + ((c - 0xD800) << 10) + (pIn[i+1] - 0xDC00);
+            i++;
+        }
+        else if (c >= 0xD800 && c <= 0xDFFF) {
+            c = '?'; // lone surrogate
+        }
+
+        char enc[4];
+        size_t n;
+        if (c < 0x80) {
+            enc[0] = (char)c; n = 1;
+        }
+        else if (c < 0x800) {
+            enc[0] = (char)(0xC0 | (c >> 6));
+            enc[1] = (char)(0x80 | (c & 0x3F)); n = 2;
+        }
+        else if (c < 0x10000) {
+            enc[0] = (char)(0xE0 | (c >> 12));
+            enc[1] = (char)(0x80 | ((c >> 6) & 0x3F));
+            enc[2] = (char)(0x80 | (c & 0x3F)); n = 3;
+        }
+        else {
+            enc[0] = (char)(0xF0 | (c >> 18));
+            enc[1] = (char)(0x80 | ((c >> 12) & 0x3F));
+            enc[2] = (char)(0x80 | ((c >> 6) & 0x3F));
+            enc[3] = (char)(0x80 | (c & 0x3F)); n = 4;
+        }
+        if (o + n >= outSz) break;
+        memcpy(&pOut[o], enc, n);
+        o += n;
+    }
+    pOut[o] = 0;
+}
+#endif
+
 int Windows_ErrorMsgboxWide(const char *a1, ...)
 {
     char16_t *v1; // eax
     HWND v2; // eax
     char16_t *v4; // [esp-8h] [ebp-808h]
     char16_t Text[1024]; // [esp+0h] [ebp-800h] BYREF
-    char tmp[1024+1];
+    char tmp[1024*3+1]; // Added: up to 3 UTF-8 bytes per char
     va_list va; // [esp+808h] [ebp+8h] BYREF
 
     va_start(va, a1);
@@ -267,7 +315,7 @@ int Windows_ErrorMsgboxWide(const char *a1, ...)
     jk_vsnwprintf(Text, 0x400u, v1, va);
     va_end(va);
     //v4 = jkStrings_GetUniStringWithFallback("ERROR");
-    stdString_WcharToChar(tmp, Text, 1024);
+    Windows_WcharToUtf8(tmp, sizeof(tmp), Text);
 
     jk_printf("ERROR: %s\n", tmp);
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", tmp, NULL);
@@ -282,7 +330,7 @@ int Windows_ErrorMsgbox(const char *a1, ...)
     char16_t *v4; // [esp-8h] [ebp-408h]
     char16_t Text[512]; // [esp+0h] [ebp-400h] BYREF
     va_list va; // [esp+408h] [ebp+8h] BYREF
-    char tmp[512+1];
+    char tmp[512*3+1]; // Added: up to 3 UTF-8 bytes per char
 
     va_start(va, a1);
 
@@ -298,7 +346,7 @@ int Windows_ErrorMsgbox(const char *a1, ...)
     va_end(va);
     //v4 = jkStrings_GetUniStringWithFallback("ERROR");
 
-    stdString_WcharToChar(tmp, Text, 512);
+    Windows_WcharToUtf8(tmp, sizeof(tmp), Text);
 
     jk_printf("ERROR: %s\n", tmp);
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", tmp, NULL);

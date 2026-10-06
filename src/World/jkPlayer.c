@@ -718,7 +718,11 @@ int jkPlayer_ReadConf(char16_t *name)
     if (!stdConffile_OpenReadBypass(fpath))
         return 0;
 
-    if ( stdConffile_ReadLine() && _sscanf(stdConffile_g_aLine, "version %d", &version) == 1 && version == 1 && stdConffile_ReadLine() )
+    // Added: MoTS also takes the original JKM.EXE's "version 2" profiles: version 1
+    // plus ten "taunt N" lines after the options, which are skipped (no taunt
+    // selection here). The profile is written back as version 1.
+    if ( stdConffile_ReadLine() && _sscanf(stdConffile_g_aLine, "version %d", &version) == 1
+         && (version == 1 || (version == 2 && Main_bMotsCompat)) && stdConffile_ReadLine() )
     {
         _sscanf(stdConffile_g_aLine, "diff %d", &jkPlayer_setDiff);
         if ( jkPlayer_setDiff < 0 )
@@ -730,6 +734,15 @@ int jkPlayer_ReadConf(char16_t *name)
             jkPlayer_setDiff = 2;
         }
         jkPlayer_ReadOptionsConf();
+        if (version == 2)
+        {
+            int taunt;
+            for (int i = 0; i < 10; i++)
+            {
+                if (!stdConffile_ReadLine() || _sscanf(stdConffile_g_aLine, "taunt %d", &taunt) != 1)
+                    break;
+            }
+        }
         sithWeapon_ReadConf();
         //jk_printf("%s\n", stdConffile_g_aLine);
         sithControl_ReadConf();
