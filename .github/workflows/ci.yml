@@ -2,12 +2,15 @@ name: CI
 
 # One pipeline per commit: the platform builds run as parallel jobs. On master,
 # each job adds its package (Linux, macOS, Windows, signed Android APK) to the
-# build-<run number, zero-padded> release on https://github.com/tib-kpl/OpenJKDF2/releases
+# build-<run number> release on https://github.com/tib-kpl/OpenJKDF2/releases
 # as soon as it is done, so a slow or failing platform never holds back the
 # others.
 
 on:
   push:
+    # Branches only: the release tags this workflow creates must not start
+    # new pipelines.
+    branches: [ '**' ]
   pull_request:
     branches: [ master ]
   workflow_dispatch:
@@ -83,9 +86,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Release that every job of this run uploads into. Zero-padded:
-          # GitHub lists releases by tag name, so build-9 would sort above build-10.
-          RELEASE_TAG=$(printf 'build-%04d' "$GITHUB_RUN_NUMBER")
+          # Release that every job of this run uploads into. Two digits at
+          # least: GitHub lists releases by tag name, so build-9 would sort
+          # above build-10.
+          RELEASE_TAG=$(printf 'build-%02d' "$GITHUB_RUN_NUMBER")
           # Whichever job finishes first creates the release; a concurrent
           # create fails on the existing tag, which is fine.
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
@@ -128,9 +132,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Release that every job of this run uploads into. Zero-padded:
-          # GitHub lists releases by tag name, so build-9 would sort above build-10.
-          RELEASE_TAG=$(printf 'build-%04d' "$GITHUB_RUN_NUMBER")
+          # Release that every job of this run uploads into. Two digits at
+          # least: GitHub lists releases by tag name, so build-9 would sort
+          # above build-10.
+          RELEASE_TAG=$(printf 'build-%02d' "$GITHUB_RUN_NUMBER")
           # Whichever job finishes first creates the release; a concurrent
           # create fails on the existing tag, which is fine.
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
@@ -201,9 +206,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Release that every job of this run uploads into. Zero-padded:
-          # GitHub lists releases by tag name, so build-9 would sort above build-10.
-          RELEASE_TAG=$(printf 'build-%04d' "$GITHUB_RUN_NUMBER")
+          # Release that every job of this run uploads into. Two digits at
+          # least: GitHub lists releases by tag name, so build-9 would sort
+          # above build-10.
+          RELEASE_TAG=$(printf 'build-%02d' "$GITHUB_RUN_NUMBER")
           # Whichever job finishes first creates the release; a concurrent
           # create fails on the existing tag, which is fine.
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
@@ -283,9 +289,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Release that every job of this run uploads into. Zero-padded:
-          # GitHub lists releases by tag name, so build-9 would sort above build-10.
-          RELEASE_TAG=$(printf 'build-%04d' "$GITHUB_RUN_NUMBER")
+          # Release that every job of this run uploads into. Two digits at
+          # least: GitHub lists releases by tag name, so build-9 would sort
+          # above build-10.
+          RELEASE_TAG=$(printf 'build-%02d' "$GITHUB_RUN_NUMBER")
           # Whichever job finishes first creates the release; a concurrent
           # create fails on the existing tag, which is fine.
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
