@@ -151,9 +151,11 @@ jobs:
           mkdir -p win64-package
           cp build_win64/*.dll build_win64/*.exe win64-package/
           # Fail if a non-system DLL the exe/DLLs import is not in the package
+          # (DLL names are case-insensitive on Windows: compare in lowercase)
           missing=0
-          for dll in $(x86_64-w64-mingw32-objdump -p win64-package/*.exe win64-package/*.dll | sed -n 's/^\s*DLL Name: //p' | sort -u); do
-            if [ ! -f "win64-package/$dll" ] && ! ls /usr/x86_64-w64-mingw32/lib/lib$(echo "${dll%.dll}" | tr 'A-Z' 'a-z').a >/dev/null 2>&1; then
+          packaged=$(ls win64-package | tr 'A-Z' 'a-z')
+          for dll in $(x86_64-w64-mingw32-objdump -p win64-package/*.exe win64-package/*.dll | sed -n 's/^\s*DLL Name: //p' | tr 'A-Z' 'a-z' | sort -u); do
+            if ! echo "$packaged" | grep -qxF "$dll" && [ ! -f "/usr/x86_64-w64-mingw32/lib/lib${dll%.dll}.a" ]; then
               echo "::error::$dll is imported but not packaged"; missing=1
             fi
           done
