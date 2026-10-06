@@ -23,6 +23,10 @@ paths=("/usr/local/mingw64/bin"
     "/usr/local/Cellar/mingw-w64/11.0.0/toolchain-x86_64/x86_64-w64-mingw32/lib"
     "/usr/local/Cellar/mingw-w64/11.0.0/toolchain-x86_64/x86_64-w64-mingw32/bin")
 
+# Distro MinGW GCC runtime (libstdc++/libgcc), whatever the GCC version
+# (e.g. /usr/lib/gcc/x86_64-w64-mingw32/13-posix on Ubuntu 24.04)
+paths+=(/usr/lib/gcc/$PREFIX/*-posix(N))
+
 function findAndCopyDLL() {
     for i in "${paths[@]}"
     do

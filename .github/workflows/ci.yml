@@ -118,11 +118,16 @@ jobs:
         run: |
           export OPENJKDF2_RELEASE_COMMIT="$(git log -1 --format=%H)" \
                  OPENJKDF2_RELEASE_COMMIT_SHORT="$(git rev-parse --short=8 HEAD)"
+          # Full build like distpkg_win64.sh (no GITHUB_RUNNER_COMPILE, which
+          # drops OpenAL and networking): this zip is a release.
           cmake --toolchain cmake_modules/toolchain_mingw.cmake \
-                -DCMAKE_BUILD_TYPE=Release -DGITHUB_RUNNER_COMPILE=1 \
+                -DCMAKE_BUILD_TYPE=Release \
                 -B "$OPENJKDF2_BUILD_DIR"
       - name: Make
-        run: make -C "$OPENJKDF2_BUILD_DIR" -j $(nproc)
+        run: |
+          (make -C "$OPENJKDF2_BUILD_DIR" -j $(nproc) PROTOBUF || make -C "$OPENJKDF2_BUILD_DIR" -j1 PROTOBUF) &&
+          (make -C "$OPENJKDF2_BUILD_DIR" -j $(nproc) PROTOC || make -C "$OPENJKDF2_BUILD_DIR" -j1 PROTOC) &&
+          make -C "$OPENJKDF2_BUILD_DIR" -j $(nproc) openjkdf2-64
       - name: Package
         run: |
           ./scripts/helper_CopyMinGWDLLs.sh
