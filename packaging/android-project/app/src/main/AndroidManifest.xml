@@ -48,6 +48,14 @@
     <!-- Allow access to the vibrator -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <!-- Game folders picked anywhere on the device storage (ChooserActivity,
+         GameFolders): the engine opens its files with plain paths, which
+         needs "All files access" on Android 11+, and the legacy storage
+         permissions before that. -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+
     <!-- if you want to capture audio, uncomment this. -->
     <!-- <uses-permission android:name="android.permission.RECORD_AUDIO" /> -->
 
@@ -63,20 +71,20 @@
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="true"
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
-        android:hardwareAccelerated="true" >
+        android:hardwareAccelerated="true"
+        android:requestLegacyExternalStorage="true" >
 
         <!-- Example of setting SDL hints from AndroidManifest.xml:
         <meta-data android:name="SDL_ENV.SDL_ACCELEROMETER_AS_JOYSTICK" android:value="0"/>
          -->
      
         <!-- Launcher entry: a single icon that asks which game to start when
-             both are installed, else starts the installed one directly (see
-             ChooserActivity.java). -->
+             both are installed, else starts the installed one directly, and
+             lets the user pick the game folders (see ChooserActivity.java). -->
         <activity android:name="ChooserActivity"
             android:label="@string/app_name"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:excludeFromRecents="true"
-            android:noHistory="true"
             android:exported="true"
             >
             <intent-filter>

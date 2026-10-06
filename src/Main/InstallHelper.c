@@ -306,12 +306,30 @@ int InstallHelper_GetLocalDataDir(char* pOut, size_t pOut_sz, int bChdir)
     // which would otherwise route through the desktop path below and end up
     // in SDL_GetPrefPath (app-private internal storage, invisible to the
     // DocumentProvider and to file managers).
+    // NB: SetCwd runs before Main_Startup parses the cmdline, so
+    // Main_bMotsCompat isn't set from -motsCompat yet on first launch --
+    // check openjkdf2_bOrigWasDF2 (set from argv in main()) as well.
+    // Added: only then, though -- after a restart into the other game, or for
+    // a lookup (bChdir == 0, e.g. the Expansions & Mods menu querying the
+    // other game), Main_bMotsCompat is the game asked for.
+    int bMots = (bChdir && openjkdf2_bIsFirstLaunch)
+                ? (Main_bMotsCompat || !openjkdf2_bOrigWasDF2)
+                : Main_bMotsCompat;
+
+    // Added: a game folder picked by the user anywhere on the device storage
+    // (ChooserActivity), handed over by GameActivity through the same
+    // environment variables as the desktop override.
+    const char* override_path = getenv(bMots ? "OPENJKMOTS_ROOT" : "OPENJKDF2_ROOT");
     const char* base_path = SDL_GetAndroidExternalStoragePath();
-    if (base_path) {
-        // NB: SetCwd runs before Main_Startup parses the cmdline, so
-        // Main_bMotsCompat isn't set from -motsCompat yet on first launch --
-        // check openjkdf2_bOrigWasDF2 (set from argv in main()) as well.
-        int bMots = Main_bMotsCompat || !openjkdf2_bOrigWasDF2;
+    if (override_path && override_path[0]) {
+        stdString_SafeStrCopy(fname, override_path, sizeof(fname));
+        if (bChdir) {
+            chdir(fname);
+            stdPlatform_Printf("Using Android game folder: %s\n", fname);
+        }
+        bIsOverride = 1;
+    }
+    else if (base_path) {
         stdFnames_MakePath(fname, sizeof(fname), base_path, bMots ? "mots" : "jk1");
         stdFileUtil_MkDir(fname);
         if (bChdir) {

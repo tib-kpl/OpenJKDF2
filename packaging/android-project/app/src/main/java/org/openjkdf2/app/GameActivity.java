@@ -2,6 +2,7 @@ package org.openjkdf2.app;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.Bundle;
 import android.view.MotionEvent;
 
 import org.libsdl.app.SDLControllerManager;
@@ -14,6 +15,13 @@ import org.libsdl.app.SDLActivity;
     SDL Activity
 */
 public class GameActivity extends SDLActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        // Before SDL starts the native main: tell it where the games are
+        GameFolders.exportToEnvironment(this);
+        super.onCreate(savedInstanceState);
+    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {

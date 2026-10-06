@@ -4,4 +4,15 @@
     <string name="chooser_title">Choose a game</string>
     <string name="chooser_jk">Jedi Knight: Dark Forces II</string>
     <string name="chooser_mots">Mysteries of the Sith</string>
+    <string name="chooser_change_folders">Change game folders…</string>
+    <string name="setup_title">Game folders</string>
+    <string name="setup_not_found">Not found: select its folder</string>
+    <string name="setup_app_folder">App folder</string>
+    <string name="setup_continue">Continue</string>
+    <string name="permission_title">Storage access</string>
+    <string name="permission_message">To run games from a folder of your choice, OpenJKDF2 needs the \"All files access\" permission. It is only used to read the game files and to write saves and settings in the folders you pick.</string>
+    <string name="permission_open_settings">Open settings</string>
+    <string name="folder_bad_location">Pick a folder on the device storage or SD card.</string>
+    <string name="folder_not_jk">This folder doesn\'t contain Jedi Knight (Episode/JK1.GOB and Resource/JK_.CD).</string>
+    <string name="folder_not_mots">This folder doesn\'t contain Mysteries of the Sith (Episode/JKM.GOO and Resource/JK_.CD).</string>
 </resources>

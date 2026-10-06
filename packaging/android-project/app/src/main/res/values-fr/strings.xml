@@ -1,0 +1,14 @@
+<resources>
+    <string name="chooser_title">Choisir un jeu</string>
+    <string name="chooser_change_folders">Changer les dossiers des jeux…</string>
+    <string name="setup_title">Dossiers des jeux</string>
+    <string name="setup_not_found">Introuvable : choisir son dossier</string>
+    <string name="setup_app_folder">Dossier de l\'application</string>
+    <string name="setup_continue">Continuer</string>
+    <string name="permission_title">Accès au stockage</string>
+    <string name="permission_message">Pour lancer les jeux depuis le dossier de votre choix, OpenJKDF2 a besoin de l\'autorisation « Accès à tous les fichiers ». Elle sert uniquement à lire les fichiers des jeux et à écrire les sauvegardes et réglages dans les dossiers choisis.</string>
+    <string name="permission_open_settings">Ouvrir les paramètres</string>
+    <string name="folder_bad_location">Choisissez un dossier dans la mémoire de l\'appareil ou sur une carte SD.</string>
+    <string name="folder_not_jk">Ce dossier ne contient pas Jedi Knight (Episode/JK1.GOB et Resource/JK_.CD).</string>
+    <string name="folder_not_mots">Ce dossier ne contient pas Mysteries of the Sith (Episode/JKM.GOO et Resource/JK_.CD).</string>
+</resources>

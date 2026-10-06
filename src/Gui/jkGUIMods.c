@@ -283,7 +283,9 @@ void jkGuiMods_PopulateEntries(Darray *pListDisplayed, jkGuiElement *element)
     char tmpCwd[512];
     char tmpKeyPath[512];
 
-#if !defined(ARCH_WASM) && !defined(TARGET_ANDROID) && !defined(TARGET_RETRO_HOMEBREW)
+// Android too: its data dir may be a user-picked game folder (see
+// InstallHelper_GetLocalDataDir), not a sibling of the current one.
+#if !defined(ARCH_WASM) && !defined(TARGET_RETRO_HOMEBREW)
     Main_bMotsCompat = !Main_bMotsCompat;
     InstallHelper_GetLocalDataDir(tmpCwd, sizeof(tmpCwd), 0);
     Main_bMotsCompat = !Main_bMotsCompat;
