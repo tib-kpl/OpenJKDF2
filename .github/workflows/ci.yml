@@ -1,8 +1,9 @@
 name: CI
 
 # One pipeline per commit: the platform builds run as parallel jobs, then on
-# master the Windows zip and the signed Android APK are published as a
-# build-<commit count> release on https://github.com/tib-kpl/OpenJKDF2/releases.
+# master the Linux, macOS and Windows packages and the signed Android APK are
+# published as a build-<commit count> release on
+# https://github.com/tib-kpl/OpenJKDF2/releases.
 
 on:
   push:
@@ -24,13 +25,14 @@ jobs:
     name: Linux (Ubuntu 24.04)
     runs-on: ubuntu-24.04
     env:
-      OPENJKDF2_BUILD_DIR: /tmp/OpenJKDF2/Linux/x86_64/Debug
+      OPENJKDF2_BUILD_DIR: /tmp/OpenJKDF2/Linux/x86_64/Release
       CC: clang
       CXX: clang++
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
       - name: Install Packages
         run: |
           sudo apt-get update -qq &&
@@ -42,9 +44,28 @@ jobs:
                                   libwayland-dev wayland-protocols libasound2-dev libpulse-dev libdbus-1-dev libudev-dev &&
           sudo pip3 install cogapp
       - name: Generate CMake Build System
-        run: cmake -DCMAKE_BUILD_TYPE=Debug -B "$OPENJKDF2_BUILD_DIR"
+        run: |
+          export OPENJKDF2_RELEASE_COMMIT="$(git log -1 --format=%H)" \
+                 OPENJKDF2_RELEASE_COMMIT_SHORT="$(git rev-parse --short=8 HEAD)"
+          cmake -DCMAKE_BUILD_TYPE=Release -B "$OPENJKDF2_BUILD_DIR"
       - name: Make
         run: make -C "$OPENJKDF2_BUILD_DIR" -j $(nproc)
+      - name: Package
+        run: |
+          PKG=OpenJKDF2-linux-x86_64
+          mkdir -p "$PKG"
+          cp "$OPENJKDF2_BUILD_DIR/openjkdf2" "$PKG/"
+          find "$OPENJKDF2_BUILD_DIR" -name 'libGameNetworkingSockets.so*' -exec cp -P {} "$PKG/" \;
+          # Launcher: finds the bundled libs without changing the working
+          # directory (the game uses it to locate an existing install).
+          printf '%s\n' '#!/bin/sh' 'DIR="$(dirname "$(readlink -f "$0")")"' \
+            'LD_LIBRARY_PATH="$DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" exec "$DIR/openjkdf2" "$@"' > "$PKG/openjkdf2.sh"
+          chmod +x "$PKG/openjkdf2.sh" "$PKG/openjkdf2"
+          tar -czf "$PKG.tar.gz" "$PKG"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: OpenJKDF2-linux-x86_64.tar.gz
 
   macos:
     name: macOS
@@ -64,6 +85,14 @@ jobs:
           brew install openssl@3 protobuf
       - name: Build
         run: export HOMEBREW_PREFIX="/usr/local" && ./.github/build_macos.sh
+      - name: Package
+        # The .app is not signed/notarized: macOS users must clear the
+        # quarantine flag (xattr -cr OpenJKDF2.app) before the first launch.
+        run: ditto -c -k --keepParent OpenJKDF2.app OpenJKDF2-macos-arm64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: OpenJKDF2-macos-arm64.zip
 
   win64:
     name: Windows x64
@@ -168,7 +197,7 @@ jobs:
 
   release:
     name: Publish release
-    needs: [win64, android]
+    needs: [linux, macos, win64, android]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-24.04
     steps:
@@ -193,5 +222,7 @@ jobs:
           make_latest: true
           generate_release_notes: true
           files: |
+            dist/OpenJKDF2-linux-x86_64.tar.gz
+            dist/OpenJKDF2-macos-arm64.zip
             dist/OpenJKDF2-win64.zip
             dist/OpenJKDF2-android-arm64-v8a.apk
