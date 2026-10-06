@@ -38,6 +38,8 @@ import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
@@ -941,7 +943,27 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
                             SDLActivity.mFullscreenModeActive = false;
                         }
                         if (Build.VERSION.SDK_INT >= 30 /* Android 11 (R) */) {
-                            window.getAttributes().layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
+                            // Added: the legacy SYSTEM_UI_FLAG_* above hide the bars but, on
+                            // Android 11+, the decor keeps fitting the content inside them, so
+                            // the surface stayed at the windowed size (e.g. 1920x970 at y=55)
+                            // while native code rendered for the full display. Lay out edge to
+                            // edge and hide/show the bars through the WindowInsetsController.
+                            boolean bFullscreen = SDLActivity.mFullscreenModeActive;
+                            window.setDecorFitsSystemWindows(!bFullscreen);
+                            WindowInsetsController insetsController = window.getInsetsController();
+                            if (insetsController != null) {
+                                if (bFullscreen) {
+                                    insetsController.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                                    insetsController.hide(WindowInsets.Type.systemBars());
+                                } else {
+                                    insetsController.show(WindowInsets.Type.systemBars());
+                                }
+                            }
+
+                            // Added: attributes only take effect once set back on the window
+                            WindowManager.LayoutParams attrs = window.getAttributes();
+                            attrs.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
+                            window.setAttributes(attrs);
                         }
                         if (Build.VERSION.SDK_INT >= 30 /* Android 11 (R) */ &&
                             Build.VERSION.SDK_INT < 35 /* Android 15 */) {

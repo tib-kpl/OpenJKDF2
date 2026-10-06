@@ -1615,8 +1615,15 @@ int Window_Main_Linux(int argc, char** argv)
     
     result = Main_Startup(cmdLine);
 
-    int fullscreen = wuRegistry_GetBool("Window_isFullscreen", 0);
-    int hidpi = wuRegistry_GetBool("Window_isHiDpi", 0);
+#if defined(TARGET_ANDROID) || defined(TARGET_IOS)
+    // Added: handhelds/phones default to fullscreen (no status bar) at native
+    // resolution; still overridable from the Display setup menu.
+    const int bDefaultFullscreen = 1;
+#else
+    const int bDefaultFullscreen = 0;
+#endif
+    int fullscreen = wuRegistry_GetBool("Window_isFullscreen", bDefaultFullscreen);
+    int hidpi = wuRegistry_GetBool("Window_isHiDpi", bDefaultFullscreen);
     Window_SetFullscreen(fullscreen);
     Window_SetHiDpi(hidpi);
     Window_RecreateSDL2Window();
