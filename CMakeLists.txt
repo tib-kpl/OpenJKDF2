@@ -115,6 +115,15 @@ add_compile_definitions(
     QOL_IMPROVEMENTS
 )
 
+# The engine's wide strings are char16_t (built with -fshort-wchar), but the
+# libc wcslen() of Linux/Android/macOS counts 4-byte wchar_t. Since clang 22,
+# loop idiom recognition turns hand-written char16_t length loops (_wcslen in
+# jk.c) into calls to that wcslen(), which then returns about half the length:
+# menu labels were cut in half. Never let the compiler emit wcslen().
+if(NOT MSVC)
+    add_compile_options(-fno-builtin-wcslen)
+endif()
+
 # The commit hash changes on every commit: keep it on the one file that uses it,
 # so the other sources' compile flags (and compiler caches such as ccache) stay
 # stable from one commit to the next.
