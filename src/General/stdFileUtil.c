@@ -333,31 +333,42 @@ int stdFileUtil_Deltree(const char* lpPathName)
 
 static char* search_ext = "";
 
+// Added: "." and ".." are never listed. The listing used to keep them and skip
+// the first two entries, but some filesystems don't return them (Android's
+// FUSE shared storage, e.g. a game folder in /storage/emulated/0): the first
+// two real files were then dropped -- with only Res1hi.gob and Res2.gob in
+// Resource/, no GOB was loaded at all.
+static int is_dot_entry(const struct dirent *dir)
+{
+    return !strcmp(dir->d_name, ".") || !strcmp(dir->d_name, "..");
+}
+
 /* when return 1, scandir will put this dirent to the list */
 static int parse_ext(const struct dirent *dir)
 {
-    if(!dir)
+    if(!dir || is_dot_entry(dir))
         return 0;
 
-    if(dir->d_type == DT_REG) 
+    // Added: DT_UNKNOWN too, as some filesystems (Android FUSE) don't report types
+    if(dir->d_type == DT_REG || dir->d_type == DT_UNKNOWN)
     {
         const char *ext = strrchr(dir->d_name,'.');
         if((!ext) || (ext == dir->d_name)) {
             return 0;
         }
-        else 
+        else
         {
             if(__strnicmp(ext, search_ext, 3) == 0)
                 return 1;
         }
     }
-    else
-    {
-        if (!strncmp(dir->d_name, ".", 1)) return 1;
-        if (!strncmp(dir->d_name, "..", 1)) return 1;
-    }
 
     return 0;
+}
+
+static int parse_all(const struct dirent *dir)
+{
+    return dir && !is_dot_entry(dir);
 }
 
 int stdFileUtil_FindNext(stdFileSearch *a1, stdFileSearchResult *a2)
@@ -368,12 +379,11 @@ int stdFileUtil_FindNext(stdFileSearch *a1, stdFileSearchResult *a2)
     if ( !a1 )
         return 0;
 
+    // isNotFirst: index of the next entry to return, plus one (0 before the first call)
+    int idx = 0;
     if (a1->isNotFirst++)
     {
-        if (a1->isNotFirst >= a1->nFoundFiles)
-            iter = NULL;
-        else
-            iter = a1->namelist[a1->isNotFirst];
+        idx = a1->isNotFirst - 1;
     }
     else
     {
@@ -425,15 +435,13 @@ int stdFileUtil_FindNext(stdFileSearch *a1, stdFileSearchResult *a2)
 #ifdef TARGET_RETRO_HOMEBREW
         errno = 0;
 #endif
-        a1->nFoundFiles = scandir(tmp, &a1->namelist, search_ext ? parse_ext : NULL, alphasort);
-        
+        a1->nFoundFiles = scandir(tmp, &a1->namelist, search_ext ? parse_ext : parse_all, alphasort);
+
         if (!a1->namelist || a1->nFoundFiles <= 0) return 0;
-        
-        iter = a1->namelist[2];
-        a1->isNotFirst = 2;
     }
 
-    if (a1->nFoundFiles <= 2 || !iter)
+    iter = (idx < a1->nFoundFiles) ? a1->namelist[idx] : NULL;
+    if (!iter)
         return 0;
 
     strncpy(a2->fpath, iter->d_name, sizeof(a2->fpath));
