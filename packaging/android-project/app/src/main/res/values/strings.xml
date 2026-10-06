@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">OpenJKDF2</string>
     <string name="app_name_mots">OpenMoTS</string>
+    <string name="chooser_title">Choose a game</string>
+    <string name="chooser_jk">Jedi Knight: Dark Forces II</string>
+    <string name="chooser_mots">Mysteries of the Sith</string>
 </resources>

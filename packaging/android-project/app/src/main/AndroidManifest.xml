@@ -69,6 +69,22 @@
         <meta-data android:name="SDL_ENV.SDL_ACCELEROMETER_AS_JOYSTICK" android:value="0"/>
          -->
      
+        <!-- Launcher entry: a single icon that asks which game to start when
+             both are installed, else starts the installed one directly (see
+             ChooserActivity.java). -->
+        <activity android:name="ChooserActivity"
+            android:label="@string/app_name"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:exported="true"
+            >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
         <activity android:name="GameActivity"
             android:label="@string/app_name"
             android:alwaysRetainTaskState="true"
@@ -77,10 +93,6 @@
             android:preferMinimalPostProcessing="true"
             android:exported="true"
             >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
             <!-- Let Android know that we can handle some USB devices and should receive this event -->
             <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
@@ -95,12 +107,10 @@
             -->
         </activity>
 
-        <!-- MoTS entry. Its launcher icon comes from the "mots" product flavor
-             (src/mots/AndroidManifest.xml), a separate app (org.openjkdf2.mots)
-             so that launchers showing one icon per package (e.g. Cocoon) list
-             both games. Runs in a separate process because SDL only supports
-             one instance per process, and in a separate task (via taskAffinity)
-             so it shows up separately in the recents picker. -->
+        <!-- MoTS entry, started by ChooserActivity. Runs in a separate process
+             because SDL only supports one instance per process, and in a
+             separate task (via taskAffinity) so it shows up separately in the
+             recents picker and can be closed independently of the main game. -->
         <activity android:name="MotsActivity"
             android:label="@string/app_name_mots"
             android:icon="@mipmap/ic_launcher_mots"
@@ -112,12 +122,6 @@
             android:preferMinimalPostProcessing="true"
             android:exported="true"
             >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <!-- Some shortcut-maker tools only resolve activities that
-                     also declare DEFAULT -->
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
             <!-- Let Android know that we can handle some USB devices and should receive this event -->
             <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />

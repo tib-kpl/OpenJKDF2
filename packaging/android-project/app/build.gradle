@@ -46,21 +46,6 @@ android {
             // }
         }
     }
-    // One app per game, so launchers that show a single icon per package list
-    // both: "jk" keeps the original package, "mots" is a separate app whose
-    // launcher entry starts Mysteries of the Sith (see src/mots).
-    flavorDimensions "game"
-    productFlavors {
-        jk {
-            dimension "game"
-            applicationId "org.openjkdf2.app"
-        }
-        mots {
-            dimension "game"
-            applicationId "org.openjkdf2.mots"
-        }
-    }
-
     // Fixed signing key so CI-built APKs (built on fresh runners) install
     // over each other. Provided by CI secrets via the environment; without
     // them, builds fall back to the default per-machine debug key.
