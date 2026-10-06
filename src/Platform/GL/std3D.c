@@ -1193,6 +1193,41 @@ static void std3D_PresentSWWorld(void)
 }
 #endif
 
+// Added: appends a dimmed menu quad spanning screen x [x0, x1] that samples u from u0 (at x0) to
+// u1 (at x1), so u0 > u1 gives a horizontal mirror. Used to fill the menu pillarbox bars.
+static void std3D_PushMenuMirrorQuad(float x0, float x1, float u0, float u1, float h, float v)
+{
+    const uint32_t dimColor = 0xFF606060;
+    float xs[4] = {x0, x0, x1, x1};
+    float ys[4] = {0.0, h, h, 0.0};
+    float us[4] = {u0, u0, u1, u1};
+    float vs[4] = {0.0, v, v, 0.0};
+
+    for (int i = 0; i < 4; i++)
+    {
+        D3DVERTEX* pVert = &GL_tmpVertices[GL_tmpVerticesAmt+i];
+        pVert->x = xs[i];
+        pVert->y = ys[i];
+        pVert->z = 0.0;
+        pVert->tu = us[i];
+        pVert->tv = vs[i];
+        *(uint32_t*)&pVert->nx = 0;
+        pVert->color = dimColor;
+        *(uint32_t*)&pVert->nz = 0;
+    }
+
+    GL_tmpTris[GL_tmpTrisAmt+0].v1 = GL_tmpVerticesAmt+1;
+    GL_tmpTris[GL_tmpTrisAmt+0].v2 = GL_tmpVerticesAmt+0;
+    GL_tmpTris[GL_tmpTrisAmt+0].v3 = GL_tmpVerticesAmt+2;
+
+    GL_tmpTris[GL_tmpTrisAmt+1].v1 = GL_tmpVerticesAmt+0;
+    GL_tmpTris[GL_tmpTrisAmt+1].v2 = GL_tmpVerticesAmt+3;
+    GL_tmpTris[GL_tmpTrisAmt+1].v3 = GL_tmpVerticesAmt+2;
+
+    GL_tmpVerticesAmt += 4;
+    GL_tmpTrisAmt += 2;
+}
+
 void std3D_DrawMenu()
 {
     if (Main_bHeadless) return;
@@ -1225,6 +1260,7 @@ void std3D_DrawMenu()
     menu_x = 0.0;
     
     int bFixHudScale = 0;
+    int bMenuPillarbox = 0;
 
     double fake_windowW = (double)Window_xSize;
     double fake_windowH = (double)Window_ySize;
@@ -1241,6 +1277,7 @@ void std3D_DrawMenu()
         // Keep 4:3 aspect
         menu_x = (menu_w - (menu_h * (640.0 / 480.0))) / 2.0;
         menu_w = (menu_h * (640.0 / 480.0));
+        bMenuPillarbox = 1;
     }
     else if (jkCutscene_isRendering) {
         bFixHudScale = 1;
@@ -1330,6 +1367,18 @@ void std3D_DrawMenu()
         // suppress this redundant in-game menu-overlay quad (else the HUD would be drawn twice).
         GL_tmpVerticesAmt = rdsw_bWorldPresented ? 0 : 4;
         GL_tmpTrisAmt = rdsw_bWorldPresented ? 0 : 2;
+
+        // Added: fill the 4:3 pillarbox bars of the menus with a dimmed mirror of the menu's
+        // edges instead of black.
+        if (bMenuPillarbox && menu_x > 0.0 && GL_tmpVerticesAmt)
+        {
+            float frac = menu_x / menu_w;
+            if (frac > 1.0) frac = 1.0;
+
+            // Left bar: mirror of the leftmost strip; right bar: mirror of the rightmost strip.
+            std3D_PushMenuMirrorQuad(0.0, menu_x, frac * menu_u, 0.0, menu_h, menu_v);
+            std3D_PushMenuMirrorQuad(menu_x + menu_w, (double)Window_xSize, menu_u, (1.0 - frac) * menu_u, menu_h, menu_v);
+        }
     }
     else if (jkGuiBuildMulti_bRendering)
     {

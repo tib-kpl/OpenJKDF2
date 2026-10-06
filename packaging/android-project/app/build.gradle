@@ -46,10 +46,33 @@ android {
             // }
         }
     }
+    // Fixed signing key so CI-built APKs (built on fresh runners) install
+    // over each other. Provided by CI secrets via the environment; without
+    // them, builds fall back to the default per-machine debug key.
+    def releaseKeystore = System.getenv("OPENJKDF2_KEYSTORE_FILE")
+    def hasReleaseKey = releaseKeystore && file(releaseKeystore).exists()
+    signingConfigs {
+        if (hasReleaseKey) {
+            ci {
+                storeFile file(releaseKeystore)
+                storePassword System.getenv("OPENJKDF2_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("OPENJKDF2_KEY_ALIAS") ?: "openjkdf2"
+                keyPassword System.getenv("OPENJKDF2_KEYSTORE_PASSWORD")
+            }
+        }
+    }
     buildTypes {
+        debug {
+            if (hasReleaseKey) {
+                signingConfig signingConfigs.ci
+            }
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasReleaseKey) {
+                signingConfig signingConfigs.ci
+            }
         }
     }
     applicationVariants.all { variant ->
