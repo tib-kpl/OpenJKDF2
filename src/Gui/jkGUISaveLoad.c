@@ -21,7 +21,46 @@
 
 #include "jk.h"
 
+#include <time.h>
+#include <stdio.h>
+
 static int32_t jkGuiSaveLoad_listIdk[2] = {0xd, 0xe};
+
+// Added: "level_YYYY-MM-DD_HH-MM-SS", used as default save name and file name
+static char jkGuiSaveLoad_autoName[80];
+
+static void jkGuiSaveLoad_BuildAutoName(char* out, size_t outSize)
+{
+    char level[33];
+    size_t n = 0;
+    time_t t = time(NULL);
+    struct tm* tm = localtime(&t);
+
+    out[0] = 0;
+    if ( !tm )
+        return;
+
+    // Level from the .jkl file name, reduced to filename-safe characters
+    if ( sithWorld_g_pCurrentWorld )
+    {
+        const char* src = sithWorld_g_pCurrentWorld->map_jkl_fname;
+        for ( ; *src && *src != '.' && n < sizeof(level) - 1; src++ )
+        {
+            char c = *src;
+            if ( c >= 'A' && c <= 'Z' )
+                c = c - 'A' + 'a';
+            if ( !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_') )
+                c = '_';
+            level[n++] = c;
+        }
+    }
+    level[n] = 0;
+
+    snprintf(out, outSize, "%s%s%04d-%02d-%02d_%02d-%02d-%02d",
+             level, n ? "_" : "",
+             tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+             tm->tm_hour, tm->tm_min, tm->tm_sec);
+}
 
 static jkGuiElement jkGuiSaveLoad_aElements[15] = {
     {ELEMENT_TEXT, 0, 5, 0, 3, {0x32, 0x32, 0x1F4, 0x1E}, 1, 0, 0, 0, 0, 0, {0}, 0},
@@ -344,6 +383,20 @@ int jkGuiSaveLoad_Show(int bIsSave)
     jkGuiSaveLoad_PopulateInfo(0);
     _wcsncpy(jkGuiSaveLoad_word_559830, &jkGuiSaveLoad_word_559C54[8], 0xFFu);
     jkGuiSaveLoad_word_559830[255] = 0;
+
+    // Added: prefill the save name with date/time + level, so saving
+    // only needs a confirm (typing on a gamepad is tedious)
+    jkGuiSaveLoad_autoName[0] = 0;
+    if ( bIsSave )
+    {
+        jkGuiSaveLoad_BuildAutoName(jkGuiSaveLoad_autoName, sizeof(jkGuiSaveLoad_autoName));
+        if ( jkGuiSaveLoad_autoName[0] )
+        {
+            stdString_CharToWchar(jkGuiSaveLoad_word_559830, jkGuiSaveLoad_autoName, 255);
+            jkGuiSaveLoad_word_559830[255] = 0;
+        }
+    }
+
     while ( 1 )
     {
         while ( 1 )
@@ -426,7 +479,11 @@ LABEL_24:
                 if ( !v15[i] )
                     break;
             }
-            _sprintf(v30, JKSAVE_FORMATSTR, i);
+            // Added: name new save files after date/time + level when available
+            if ( jkGuiSaveLoad_autoName[0] )
+                snprintf(v30, sizeof(v30), "%s_%s.jks", Main_bMotsCompat ? "msav" : "save", jkGuiSaveLoad_autoName);
+            else
+                _sprintf(v30, JKSAVE_FORMATSTR, i);
             JK_FREE(v15);
 LABEL_44:
             v28 = jkGuiSaveLoad_aElements[2].wstr;
