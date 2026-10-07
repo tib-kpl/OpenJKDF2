@@ -51,6 +51,15 @@ static void jkGuiSaveLoad_BuildAutoName(char* out, size_t outSize)
                 c = c - 'A' + 'a';
             if ( !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_') )
                 c = '_';
+            // Split the level number prefix from its name: "01narshadda" -> "01_narshadda"
+            if ( c >= 'a' && c <= 'z' && n > 0 && n < sizeof(level) - 2 )
+            {
+                size_t k = 0;
+                while ( k < n && level[k] >= '0' && level[k] <= '9' )
+                    k++;
+                if ( k == n )
+                    level[n++] = '_';
+            }
             level[n++] = c;
         }
     }
