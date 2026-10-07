@@ -281,6 +281,7 @@ int stdFileUtil_Deltree(const char* lpPathName)
 
 #ifndef TARGET_RETRO_HOMEBREW
     nftw(tmp, rmFiles, 10, FTW_DEPTH|FTW_MOUNT|FTW_PHYS);
+    casepath_invalidate(); // Added
 #else
     DIR *dir;
     struct dirent *entry;
@@ -517,6 +518,7 @@ int stdFileUtil_FileExists(const char *path)
 void stdFileUtil_RmDir(const char *path)
 {
     rmdir(path);
+    casepath_invalidate(); // Added
 }
 
 // https://stackoverflow.com/questions/2336242/recursive-mkdir-system-call-on-unix
@@ -558,6 +560,7 @@ int stdFileUtil_MkDir(char* path)
 #endif
 
     _mkdir(tmp, 0777);
+    casepath_invalidate(); // Added
 
     return 1;
 }
@@ -582,6 +585,7 @@ int stdFileUtil_DelFile(char* lpFileName)
 #endif
 
     unlink(tmp);
+    casepath_invalidate(); // Added
 
     return 1;
 }

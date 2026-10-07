@@ -12,6 +12,9 @@ extern FILE *fcaseopen(char const *path, char const *mode);
 
 extern void casechdir(char const *path);
 
+// Added: drop cached directory listings (call after creating/deleting files)
+extern void casepath_invalidate(void);
+
 #if defined(__cplusplus)
 }
 #endif
