@@ -78,6 +78,7 @@ void sithControl_RegisterMouseBindings(); // Added
 void sithControl_RebindMouse();
 void sithControl_RebindKeyboard();
 void sithControl_RebindJoystick();
+int sithControl_HasJoystickAxisBinds(); // Added
 
 void sithControl_MapDefaultsJoystick();
 

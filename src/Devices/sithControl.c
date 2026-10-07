@@ -677,7 +677,35 @@ LABEL_30:
             }
         }
     }
+
+#if (defined(TARGET_ANDROID) || defined(TARGET_IOS)) && defined(QOL_IMPROVEMENTS)
+    // Added: a profile without any joystick axis was not made for an analog
+    // gamepad -- e.g. one from the original game on a PC, whose DirectInput
+    // button numbers don't match SDL's gamepad layout either. On handhelds the
+    // gamepad is the main input, so give it the default gamepad mapping instead
+    // of leaving the sticks unbound.
+    if (!sithControl_HasJoystickAxisBinds())
+    {
+        stdPlatform_Printf("sithControl: profile has no gamepad axes, using the default gamepad mapping\n");
+        sithControl_RebindJoystick();
+    }
+#endif
     return 1;
+}
+
+// Added
+int sithControl_HasJoystickAxisBinds()
+{
+    for (int i = 0; i < INPUT_FUNC_MAX; i++)
+    {
+        for (int j = 0; j < sithControl_aInputFuncToKeyinfo[i].numEntries; j++)
+        {
+            stdControlKeyInfoEntry* pEntry = &sithControl_aInputFuncToKeyinfo[i].aEntries[j];
+            if ((pEntry->flags & INPUT_MAPPING_FLAG_AXIS) && pEntry->dxKeyNum >= AXIS_JOY1_X && pEntry->dxKeyNum <= AXIS_JOY2_V)
+                return 1;
+        }
+    }
+    return 0;
 }
 
 int sithControl_WriteConf()

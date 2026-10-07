@@ -632,7 +632,9 @@ void jkPlayer_ParseLegacyExt()
     {
         _sscanf(stdConffile_g_aLine, "windowishidpi %d", &dpi_tmp);
         dpi_tmp = !!dpi_tmp;
+#if !defined(TARGET_ANDROID) && !defined(TARGET_IOS) // Added: app-wide there, see above
         Window_SetHiDpi(dpi_tmp);
+#endif
     }
 
     int fulltmp = 0;
@@ -640,7 +642,9 @@ void jkPlayer_ParseLegacyExt()
     {
         _sscanf(stdConffile_g_aLine, "windowfullscreen %d", &fulltmp);
         fulltmp = !!fulltmp;
+#if !defined(TARGET_ANDROID) && !defined(TARGET_IOS) // Added: app-wide there, see above
         Window_SetFullscreen(fulltmp);
+#endif
     }
 
     if (stdConffile_ReadLine())
@@ -822,8 +826,16 @@ int jkPlayer_ReadConf(char16_t *name)
         if (jkPlayer_fov > FOV_MAX)
             jkPlayer_fov = FOV_MAX;
 
+#if defined(TARGET_ANDROID) || defined(TARGET_IOS)
+        // Added: on handhelds/phones the window mode is an app-wide setting (the
+        // registry, Setup > Display), not a per-profile one: a profile made on
+        // a desktop, often windowed, brought the status bar back in game.
+        Window_isHiDpi_tmp = Window_isHiDpi;
+        Window_isFullscreen_tmp = Window_isFullscreen;
+#else
         Window_SetHiDpi(Window_isHiDpi_tmp);
         Window_SetFullscreen(Window_isFullscreen_tmp);
+#endif
 
         std3D_UpdateSettings();
 
