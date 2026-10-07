@@ -2420,10 +2420,11 @@ void sithControl_MapDefaultsJoystick() {
         mapped->binaryAxisVal = 1.5;
     }
 
-    sithControl_DefaultHelper(INPUT_FUNC_USELASTSELECTED, KEY_JOY1_B1, 2); // a
+    // Added: jump on A like most console shooters, use item/power moved to Y
+    sithControl_BindControl(INPUT_FUNC_JUMP, KEY_JOY1_B1, 0); // a
     sithControl_DefaultHelper(INPUT_FUNC_DUCK, KEY_JOY1_B2, 2); // b
     sithControl_DefaultHelper(INPUT_FUNC_ACTIVATE, KEY_JOY1_B3, 2); // x
-    sithControl_BindControl(INPUT_FUNC_JUMP, KEY_JOY1_B4, 0); // y
+    sithControl_DefaultHelper(INPUT_FUNC_USELASTSELECTED, KEY_JOY1_B4, 2); // y
 
     sithControl_DefaultHelper(INPUT_FUNC_USEINV, KEY_JOY1_B8, 2); // lstick click
     sithControl_DefaultHelper(INPUT_FUNC_USESKILL, KEY_JOY1_B9, 2); // rstick click

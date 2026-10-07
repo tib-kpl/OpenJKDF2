@@ -764,10 +764,10 @@ void stdControl_ReadGamepad(int idx) {
     sithControl_BindAxis(INPUT_FUNC_PITCH, AXIS_JOY1_R, 4u);
     sithControl_BindAxis(INPUT_FUNC_TURN, AXIS_JOY1_Z, 4u);
 
-    sithControl_DefaultHelper(INPUT_FUNC_USELASTSELECTED, KEY_JOY1_B1, 2); // a
+    sithControl_BindControl(INPUT_FUNC_JUMP, KEY_JOY1_B1, 0); // a
     sithControl_DefaultHelper(INPUT_FUNC_DUCK, KEY_JOY1_B2, 2); // b
     sithControl_DefaultHelper(INPUT_FUNC_ACTIVATE, KEY_JOY1_B3, 2); // x
-    sithControl_BindControl(INPUT_FUNC_JUMP, KEY_JOY1_B4, 0); // y
+    sithControl_DefaultHelper(INPUT_FUNC_USELASTSELECTED, KEY_JOY1_B4, 2); // y
 
     sithControl_DefaultHelper(INPUT_FUNC_USEINV, KEY_JOY1_B8, 2); // lstick click
     sithControl_DefaultHelper(INPUT_FUNC_USESKILL, KEY_JOY1_B9, 2); // rstick click
