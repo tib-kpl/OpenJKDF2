@@ -7,6 +7,16 @@
 
 #include <stdio.h>
 
+#ifdef TARGET_IOS
+#include "Platform/iOS/iosAudioSession.h"
+#endif
+
+#ifdef TARGET_ANDROID
+#include <SDL.h>
+#include <jni.h>
+#include <stdlib.h>
+#endif
+
 #include "jk.h"
 
 flex_t stdSound_fMenuVolume = 1.0f;
@@ -59,6 +69,57 @@ uint32_t stdSound_ParseWav(stdFile_t sound_file, uint32_t *nSamplesPerSec, int32
 }
 #endif
 
+#ifdef TARGET_ANDROID
+// Added: Android only grants a stream the low-latency FAST track when its rate
+// matches the output's native rate. A mismatched stream lands on the normal
+// mixer track with a ~280 ms buffer, which roughly doubles total latency and is
+// very noticeable over Bluetooth. Ask the OS for that rate rather than assume it.
+int stdSound_GetNativeOutputRate()
+{
+    static int nCached = 0;
+    if (nCached) return nCached;
+
+    int nRate = 0;
+    JNIEnv* env = (JNIEnv*)SDL_GetAndroidJNIEnv();
+    jobject activity = (jobject)SDL_GetAndroidActivity();
+    if (env && activity && (*env)->PushLocalFrame(env, 16) >= 0)
+    {
+        jclass clsCtx = (*env)->FindClass(env, "android/content/Context");
+        jmethodID midSvc = clsCtx ? (*env)->GetMethodID(env, clsCtx, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;") : NULL;
+        jobject am = midSvc ? (*env)->CallObjectMethod(env, activity, midSvc, (*env)->NewStringUTF(env, "audio")) : NULL;
+        if (am && !(*env)->ExceptionCheck(env))
+        {
+            jclass clsAm = (*env)->GetObjectClass(env, am);
+            jmethodID midProp = (*env)->GetMethodID(env, clsAm, "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
+            jstring strVal = midProp ? (jstring)(*env)->CallObjectMethod(env, am, midProp, (*env)->NewStringUTF(env, "android.media.property.OUTPUT_SAMPLE_RATE")) : NULL;
+            if (strVal && !(*env)->ExceptionCheck(env))
+            {
+                const char* psz = (*env)->GetStringUTFChars(env, strVal, NULL);
+                if (psz)
+                {
+                    nRate = atoi(psz);
+                    (*env)->ReleaseStringUTFChars(env, strVal, psz);
+                }
+            }
+        }
+        if ((*env)->ExceptionCheck(env))
+            (*env)->ExceptionClear(env);
+        (*env)->PopLocalFrame(env, NULL);
+    }
+    if (env && activity)
+        (*env)->DeleteLocalRef(env, activity);
+
+    if (nRate < 8000 || nRate > 192000)
+    {
+        stdPlatform_Printf("stdSound: OUTPUT_SAMPLE_RATE unreadable (%d), assuming 48000\n", nRate);
+        nRate = 48000;
+    }
+    stdPlatform_Printf("stdSound: native output rate %d Hz\n", nRate);
+    nCached = nRate;
+    return nRate;
+}
+#endif
+
 #ifdef STDSOUND_OPENAL
 
 #define AL_FORMAT_MONO24 (0xFFFF0000)
@@ -102,6 +163,14 @@ int stdSound_Startup()
 
 	printf("Using OpenAL+ALUT as audio backend\n");
 
+#ifdef TARGET_IOS
+    // Added: iOS silently mutes a process that never configures an
+    // AVAudioSession whenever the ring/silent switch is engaged. Must run
+    // before alcOpenDevice() -- OpenAL's CoreAudio backend starts its audio unit
+    // there, and starting it under the wrong category is what goes quiet.
+    iosAudioSession_Initialize();
+#endif
+
 	enumeration = alcIsExtensionPresent(NULL, "ALC_ENUMERATION_EXT");
 	if (enumeration == AL_FALSE)
 		fprintf(stderr, "enumeration extension not available\n");
@@ -117,7 +186,13 @@ int stdSound_Startup()
 
 	alGetError();
 
+#ifdef TARGET_ANDROID
+	// Added: mix at the output's native rate so the stream gets the fast track.
+	ALCint aCtxAttrs[] = { ALC_FREQUENCY, stdSound_GetNativeOutputRate(), 0 };
+	context = alcCreateContext(device, aCtxAttrs);
+#else
 	context = alcCreateContext(device, NULL);
+#endif
 	if (!alcMakeContextCurrent(context)) {
 		fprintf(stderr, "failed to make default context\n");
 		return 0;
@@ -401,7 +476,7 @@ int stdSound_BufferQueueAfterAnother(stdSound_buffer_t* bufPrev, stdSound_buffer
     if (source_state != AL_PLAYING) {
         alSourcePlay(bufPrev->source);
     }
-    
+
     return 1;
 }
 

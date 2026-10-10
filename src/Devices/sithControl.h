@@ -81,6 +81,8 @@ void sithControl_RebindJoystick();
 int sithControl_HasJoystickAxisBinds(); // Added
 
 void sithControl_MapDefaultsJoystick();
+// Added: see sithControl.c -- profile loads drop axis binds, this puts them back.
+void sithControl_RestoreAxisBindings();
 
 #ifdef QOL_IMPROVEMENTS
 void sithControl_SetLastSelected(int which);
