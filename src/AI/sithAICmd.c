@@ -1729,7 +1729,12 @@ int sithAICmd_Leap(SithAIControlBlock *actor, SithAIInstinct *aiclass, SithAIIns
             return 0;
         }
         if ((SithThing *)otherFlags == psVar1) {
-            sithAI_FireWeapon(actor, 0.0, 0.0, 0.0, 0.0, 1, 8);
+            // Added: Only apply Leap collision damage during an active, unattached leap.
+            if ((uint32_t)actor->field_28C > sithTime_g_msecGameTime &&
+                actor->thing->attach_flags == 0) {
+                sithAI_FireWeapon(actor, 0.0, 0.0, 0.0, 0.0, 1, 8);
+            }
+            return 0;
         }
     }
 
@@ -1789,10 +1794,14 @@ int sithAICmd_Charge(SithAIControlBlock *pActor, SithAIInstinct *pAiclass, SithA
 
     if (flags != 0) {
         if (flags == 4) {
-            if (pActor->moveSpeed != 1313.0) {
+            if (pActor->moveSpeed != 1313.0)
                 return 0;
-            }
+
             sithAI_FireWeapon(pActor, 0.0, 0.0, 0.0, 0.0, 1, 8);
+
+            // Added: Prevent repeated damage from subsequent collisions during this Charge.
+            pActor->moveSpeed = 0.0;
+
             return 0;
         }
         if (flags != 0x100) {
