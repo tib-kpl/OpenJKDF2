@@ -25,6 +25,16 @@
 #include "Dw/dwCog.h"
 #include "jk.h"
 
+// Altered: Optionally match sidestep thrust to forward thrust in QOL builds.
+static flex_d_t sithControl_GetStrafeSpeedScale(void)
+{
+#ifdef QOL_IMPROVEMENTS
+    return jkPlayer_bEqualStrafeSpeed ? 1.0 : 0.7;
+#else
+    return 0.7;
+#endif // QOL_IMPROVEMENTS
+}
+
 // Added
 static int sithControl_followingPlayer = 0;
 static int sithControl_curDebugCam = 0;
@@ -37,6 +47,34 @@ static int sithControl_008d7f50 = 0;
 static int sithControl_008d7f54 = 0;
 static int sithControl_008d7f58 = 0;
 static int sithControl_008d7f5c = 0;
+
+// Added: physics steps sithMain will run after this frame's controls, or -1 when unstepped
+int sithControl_physStepsThisFrame = -1;
+static flex_t sithControl_turnAxisBank = 0.0;
+
+// Added: the raw turn axis (mouse) is a per-frame delta, turned into a yaw velocity for
+// one frame of physics. With fixed-step physics, frames that run no step dropped their
+// delta and the next step scaled up only its own frame's delta, so far above the step
+// rate yaw moved in coarse jumps. Bank the delta until a step consumes it.
+static flex_t sithControl_GetTurnAxisVelocity(void)
+{
+    flex_t turnAxis = sithControl_GetAxis(INPUT_FUNC_TURN);
+    if (sithControl_physStepsThisFrame < 0)
+    {
+        sithControl_turnAxisBank = 0.0;
+        return turnAxis * sithTime_g_fps;
+    }
+
+    sithControl_turnAxisBank += turnAxis;
+
+    // Not integrated this frame; keep it nonzero so MotS turn start/stop messages stay as-is
+    if (sithControl_physStepsThisFrame == 0)
+        return sithControl_turnAxisBank * sithTime_g_fps;
+
+    flex_t vel = sithControl_turnAxisBank / (sithControl_physStepsThisFrame * DELTA_PHYSTICK_FPS);
+    sithControl_turnAxisBank = 0.0;
+    return vel;
+}
 
 // Added: Toggle crouch state
 static int sithControl_crouchWasSpecialMovement = 0;
@@ -156,6 +194,10 @@ int sithControl_Startup()
 {
     if ( sithControl_bInitted )
         return 0;
+
+    // Added
+    sithControl_physStepsThisFrame = -1;
+    sithControl_turnAxisBank = 0.0;
 
     if ( stdControl_Startup() )
     {
@@ -736,6 +778,7 @@ LABEL_30:
         sithControl_RebindJoystick();
     }
 #endif
+    sithControl_FixNumpadTurn(); // Added
     return 1;
 }
 
@@ -752,6 +795,26 @@ int sithControl_HasJoystickAxisBinds()
         }
     }
     return 0;
+}
+
+// Added: profiles saved with the old default Turn binds have Numpad 4 turning
+// right and Numpad 6 doing nothing. Put Numpad 4 back to left and give Numpad 6
+// right, unless the player has used Numpad 6 for something else.
+void sithControl_FixNumpadTurn()
+{
+    stdControlKeyInfo* pTurn = &sithControl_aInputFuncToKeyinfo[INPUT_FUNC_TURN];
+    if (sithControl_IsKeyBound(DIK_NUMPAD6))
+        return;
+    for (uint32_t i = 0; i < pTurn->numEntries; i++)
+    {
+        stdControlKeyInfoEntry* pEntry = &pTurn->aEntries[i];
+        if ((pEntry->flags & INPUT_MAPPING_FLAG_DXKEY) && pEntry->dxKeyNum == DIK_NUMPAD4 && (pEntry->flags & INPUT_MAPPING_FLAG_AXIS_REVERSED))
+        {
+            pEntry->flags &= ~INPUT_MAPPING_FLAG_AXIS_REVERSED;
+            sithControl_BindControl(INPUT_FUNC_TURN, DIK_NUMPAD6, INPUT_MAPPING_FLAG_AXIS_REVERSED);
+            return;
+        }
+    }
 }
 
 int sithControl_WriteConf()
@@ -1484,13 +1547,7 @@ void sithControl_PlayerMovementMots(SithThing *player)
     }
     iVar2 = sithControl_GetKey(INPUT_FUNC_SLIDETOGGLE,&local_4);
     if (iVar2 == 0) {
-        fVar4 = sithControl_GetAxis(INPUT_FUNC_TURN);
-#ifdef QOL_IMPROVEMENTS
-        // Scale appropriately to high framerates
-        fVar4 = fVar4 * sithTime_g_fps;
-#else
-        fVar4 = fVar4 * sithTime_g_fps;
-#endif
+        fVar4 = sithControl_GetTurnAxisVelocity(); // Added: was GetAxis(TURN) * fps
         if (1.0 <= move_multiplier) {
             local_8 = 1.0;
         }
@@ -1513,7 +1570,7 @@ void sithControl_PlayerMovementMots(SithThing *player)
             thing->physicsParams.angularVelocity.y = fVar4;
             fVar4 = sithControl_GetKeyAsAxisNormalized(INPUT_FUNC_SLIDE);
             fVar4 = (thing->actorParams.maxThrust +
-                    thing->actorParams.extraSpeed) * -fVar4 * 0.7;
+                    thing->actorParams.extraSpeed) * -fVar4 * sithControl_GetStrafeSpeedScale();
             if (fVar4 == 0.0) goto joined_r0x00527cfa;
             sithControl_008d7f54 = 1;
             iVar2 = sithThing_MotsTick(4,0,fVar4 * move_multiplier);
@@ -1533,7 +1590,7 @@ void sithControl_PlayerMovementMots(SithThing *player)
                 thing->physicsParams.angularVelocity.y = fVar4;
                 fVar4 = sithControl_GetKeyAsAxisNormalized(INPUT_FUNC_SLIDE);
                 fVar4 = (thing->actorParams.maxThrust +
-                        thing->actorParams.extraSpeed) * -fVar4 * 0.7;
+                        thing->actorParams.extraSpeed) * -fVar4 * sithControl_GetStrafeSpeedScale();
                 if (fVar4 == 0.0) goto joined_r0x00527cfa;
                 sithControl_008d7f54 = 1;
                 iVar2 = sithThing_MotsTick(4,0,fVar4 * move_multiplier);
@@ -1555,7 +1612,7 @@ void sithControl_PlayerMovementMots(SithThing *player)
             fVar4 = 1.0;
         }
         fVar4 = (thing->actorParams.maxThrust +
-                thing->actorParams.extraSpeed) * fVar4 * 0.7;
+                thing->actorParams.extraSpeed) * fVar4 * sithControl_GetStrafeSpeedScale();
         if (fVar4 != 0.0) {
             sithControl_008d7f54 = 1;
             iVar2 = sithThing_MotsTick(4,0,fVar4 * move_multiplier);
@@ -1691,7 +1748,7 @@ void sithControl_PlayerMovement(SithThing *player)
             }
             v7 = player->actorParams.maxThrust + player->actorParams.extraSpeed;
             player->physicsParams.angularVelocity.y = 0.0;
-            player->physicsParams.acceleration.x = v7 * v6 * 0.7;
+            player->physicsParams.acceleration.x = v7 * v6 * sithControl_GetStrafeSpeedScale();
         }
         else
         {
@@ -1700,9 +1757,9 @@ void sithControl_PlayerMovement(SithThing *player)
             // These base values only come from raw axis fetches
 #ifdef QOL_IMPROVEMENTS
             // Scale appropriately to high and low framerates
-            player->physicsParams.angularVelocity.y = sithControl_GetAxis(INPUT_FUNC_TURN) * sithTime_g_fps;
+            player->physicsParams.angularVelocity.y = sithControl_GetTurnAxisVelocity(); // Added: was GetAxis(TURN) * fps
 #else
-            player->physicsParams.angularVelocity.y = sithControl_GetAxis(INPUT_FUNC_TURN) * sithTime_g_fps;
+            player->physicsParams.angularVelocity.y = sithControl_GetTurnAxisVelocity(); // Added: was GetAxis(TURN) * fps
 #endif
             if ( move_multiplier <= 1.0 )
                 move_multiplier_ = move_multiplier;
@@ -1719,7 +1776,7 @@ void sithControl_PlayerMovement(SithThing *player)
 
             player->physicsParams.acceleration.x = sithControl_GetKeyAsAxisNormalized(INPUT_FUNC_SLIDE)
                                                             * (player->actorParams.maxThrust + player->actorParams.extraSpeed)
-                                                            * 0.7;
+                                                            * sithControl_GetStrafeSpeedScale();
         }
         v11 = sithControl_GetKeyAsAxisNormalized(0);
         y_vel = (player->actorParams.maxThrust + player->actorParams.extraSpeed) * v11;
@@ -1808,19 +1865,19 @@ void sithControl_FreeCam(SithThing *player)
             }
             v12 = v1->actorParams.extraSpeed + v1->actorParams.maxThrust;
             v1->physicsParams.angularVelocity.y = 0.0;
-            v7->x = v12 * v11 * 0.7;
+            v7->x = v12 * v11 * sithControl_GetStrafeSpeedScale();
         }
         else
         {
             // Why did MoTS do this lol
-            v7->x = (Main_bMotsCompat ? -1 : 1) * sithControl_GetKeyAsAxisNormalized(INPUT_FUNC_SLIDE) * (v1->actorParams.extraSpeed + v1->actorParams.maxThrust) * 0.7;
+            v7->x = (Main_bMotsCompat ? -1 : 1) * sithControl_GetKeyAsAxisNormalized(INPUT_FUNC_SLIDE) * (v1->actorParams.extraSpeed + v1->actorParams.maxThrust) * sithControl_GetStrafeSpeedScale();
             
 #ifdef QOL_IMPROVEMENTS
             // Scale appropriately to high framerates
-            v1->physicsParams.angularVelocity.y = sithControl_GetAxis(INPUT_FUNC_TURN) * sithTime_g_fps;
+            v1->physicsParams.angularVelocity.y = sithControl_GetTurnAxisVelocity(); // Added: was GetAxis(TURN) * fps
             v1->physicsParams.angularVelocity.y +=  sithControl_GetKeyAsAxis(INPUT_FUNC_TURN) * v1->actorParams.maxRotVelocity;// * (sithTime_g_fps / 25.0) * 2.0;
 #else
-            v1->physicsParams.angularVelocity.y = sithControl_GetAxis(INPUT_FUNC_TURN) * sithTime_g_fps;
+            v1->physicsParams.angularVelocity.y = sithControl_GetTurnAxisVelocity(); // Added: was GetAxis(TURN) * fps
             v1->physicsParams.angularVelocity.y += sithControl_GetKeyAsAxis(INPUT_FUNC_TURN) * v1->actorParams.maxRotVelocity;
 #endif
         }
@@ -1932,9 +1989,7 @@ void sithControl_RegisterKeyboardBindings()
     sithControl_DefaultHelper(INPUT_FUNC_TURN, DIK_LEFT, 2);
     sithControl_DefaultHelper(INPUT_FUNC_TURN, DIK_RIGHT, 6);
     sithControl_DefaultHelper(INPUT_FUNC_TURN, DIK_NUMPAD4, 2);
-    sithControl_DefaultHelper(INPUT_FUNC_TURN, DIK_NUMPAD4, 6);
-    sithControl_DefaultHelper(INPUT_FUNC_TURN, DIK_LEFT, 2);
-    sithControl_DefaultHelper(INPUT_FUNC_TURN, DIK_RIGHT, 6);
+    sithControl_DefaultHelper(INPUT_FUNC_TURN, DIK_NUMPAD6, 6); // Added: as in JK.EXE. Was Numpad 4 again, then Left and Right again
 
     sithControl_DefaultHelper(INPUT_FUNC_FORWARD, DIK_UP, 2);
     sithControl_DefaultHelper(INPUT_FUNC_FORWARD, DIK_DOWN, 6);
@@ -2581,6 +2636,21 @@ void sithControl_MapDefaultsJoystick() {
     sithControl_BindControl(INPUT_FUNC_NEXTINV, KEY_JOY1_B5, 0);
     sithControl_BindControl(INPUT_FUNC_USEINV, KEY_JOY1_B7, 0);
 #endif
+}
+
+// Added: whether any control has this key.
+int sithControl_IsKeyBound(int dxKeyNum)
+{
+    for (int i = 0; i < INPUT_FUNC_MAX; i++)
+    {
+        stdControlKeyInfo* pInfo = &sithControl_aInputFuncToKeyinfo[i];
+        for (uint32_t j = 0; j < pInfo->numEntries; j++)
+        {
+            if ((pInfo->aEntries[j].flags & INPUT_MAPPING_FLAG_DXKEY) && pInfo->aEntries[j].dxKeyNum == dxKeyNum)
+                return 1;
+        }
+    }
+    return 0;
 }
 
 // Common button for both items and force power usage for controllers

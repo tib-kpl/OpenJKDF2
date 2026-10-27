@@ -91,6 +91,10 @@ void jkPlayer_nullsub_1(jkPlayerInfo* unk);
 void jkPlayer_CreateConf(char16_t *name);
 void jkPlayer_WriteConf(char16_t *name);
 int jkPlayer_ReadConf(char16_t *name);
+const char* jkPlayer_SkipLinePrefix(const char* pLine); // Added
+#ifdef QOL_IMPROVEMENTS
+int jkPlayer_RepairConf(char16_t *name); // Added
+#endif
 void jkPlayer_SetPovModel(jkPlayerInfo *info, rdModel3 *model);
 MATH_FUNC void jkPlayer_DrawPov();
 MATH_FUNC void jkPlayer_renderSaberWeaponMesh(SithThing *a1);
@@ -157,6 +161,7 @@ extern int jkPlayer_bKeepCorpses;
 extern int jkPlayer_bFastMissionText;
 extern int jkPlayer_bUseOldPlayerPhysics;
 extern int jkPlayer_bLedgeSqueeze;
+extern int jkPlayer_bEqualStrafeSpeed; // Added: Optional equal forward and sidestep speed.
 
 extern int jkPlayer_setCrosshairOnLightsaber;
 extern int jkPlayer_setCrosshairOnFist;

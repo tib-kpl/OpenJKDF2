@@ -39,6 +39,9 @@
 #define sithControl_PlayerLook_ADDR (0x004D8F40)
 #define SITHCONTROL_OPTION_TOGGLE_CROUCH 0x40
 
+// Added: physics steps sithMain runs after this frame's controls, or -1 when unstepped
+extern int sithControl_physStepsThisFrame;
+
 int sithControl_Startup();
 int sithControl_Shutdown();
 int sithControl_IsOpen();
@@ -85,6 +88,9 @@ int sithControl_HasJoystickAxisBinds(); // Added
 void sithControl_MapDefaultsJoystick();
 // Added: see sithControl.c -- profile loads drop axis binds, this puts them back.
 void sithControl_RestoreAxisBindings();
+// Added
+int sithControl_IsKeyBound(int dxKeyNum);
+void sithControl_FixNumpadTurn();
 
 #ifdef QOL_IMPROVEMENTS
 void sithControl_SetLastSelected(int which);

@@ -380,13 +380,8 @@ int stdFileUtil_FindNext(stdFileSearch *a1, stdFileSearchResult *a2)
     if ( !a1 )
         return 0;
 
-    // isNotFirst: index of the next entry to return, plus one (0 before the first call)
-    int idx = 0;
-    if (a1->isNotFirst++)
-    {
-        idx = a1->isNotFirst - 1;
-    }
-    else
+    // Added: isNotFirst is 1 + the index of the next namelist entry to return.
+    if (!a1->isNotFirst)
     {
 #ifdef TARGET_DREAMCAST
         // Added: asset directories (resource/, episode/, ...) live on the GD-ROM;
@@ -437,11 +432,25 @@ int stdFileUtil_FindNext(stdFileSearch *a1, stdFileSearchResult *a2)
         errno = 0;
 #endif
         a1->nFoundFiles = scandir(tmp, &a1->namelist, search_ext ? parse_ext : parse_all, alphasort);
+        a1->isNotFirst = 1;
 
         if (!a1->namelist || a1->nFoundFiles <= 0) return 0;
     }
 
-    iter = (idx < a1->nFoundFiles) ? a1->namelist[idx] : NULL;
+    // Added: skip "." and ".." by name. This used to skip the first two
+    // entries, but alphasort puts names like "!dm.gob" before ".", so a real
+    // file was dropped and "." or ".." was returned in its place.
+    iter = NULL;
+    while (a1->isNotFirst - 1 < a1->nFoundFiles)
+    {
+        struct dirent* pEntry = a1->namelist[a1->isNotFirst - 1];
+        a1->isNotFirst++;
+        if (!strcmp(pEntry->d_name, ".") || !strcmp(pEntry->d_name, ".."))
+            continue;
+        iter = pEntry;
+        break;
+    }
+
     if (!iter)
         return 0;
 
