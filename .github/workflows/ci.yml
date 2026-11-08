@@ -217,8 +217,8 @@ jobs:
             gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
           gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber OpenJKDF2-win64.zip
 
-  android:
-    name: Android arm64
+  android-jk:
+    name: Android arm64 (Jedi Knight)
     runs-on: ubuntu-24.04
     env:
       OPENJKDF2_BUILD_DIR: build_android_aarch64
@@ -255,7 +255,7 @@ jobs:
                 -B "$OPENJKDF2_BUILD_DIR"
       - name: Make
         run: make -C "$OPENJKDF2_BUILD_DIR" -j $(nproc) openjkdf2-armv8a || make -C "$OPENJKDF2_BUILD_DIR" -j1 openjkdf2-armv8a
-      - name: Gradle
+      - name: Gradle (JK flavor)
         env:
           OPENJKDF2_KEYSTORE_B64: ${{ secrets.OPENJKDF2_KEYSTORE_B64 }}
           OPENJKDF2_KEYSTORE_PASSWORD: ${{ secrets.OPENJKDF2_KEYSTORE_PASSWORD }}
@@ -277,13 +277,13 @@ jobs:
           cp "$(find "$OPENJKDF2_BUILD_DIR" -name libSDL3_mixer.so | head -1)" "$LIBS/"
           cd packaging/android-project
           chmod +x gradlew
-          ./gradlew --no-daemon assembleDebug
-          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/OpenJKDF2-android-arm64-v8a.apk"
+          ./gradlew --no-daemon assembleJkDebug
+          cp app/build/outputs/apk/jk/debug/app-jk-debug.apk "$GITHUB_WORKSPACE/Jedi_Knight-android-arm64-v8a.apk"
           rm -f "$RUNNER_TEMP/openjkdf2-release.jks"
       - uses: actions/upload-artifact@v4
         with:
-          name: android
-          path: OpenJKDF2-android-arm64-v8a.apk
+          name: android-jk
+          path: Jedi_Knight-android-arm64-v8a.apk
       - name: Add to release
         if: env.IS_RELEASE == 'true'
         env:
@@ -298,4 +298,87 @@ jobs:
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
             gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"                --title "$RELEASE_TAG (${GITHUB_SHA:0:8})" --generate-notes ||
             gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
-          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber OpenJKDF2-android-arm64-v8a.apk
+          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber Jedi_Knight-android-arm64-v8a.apk
+
+  android-mots:
+    name: Android arm64 (Mysteries of the Sith)
+    runs-on: ubuntu-24.04
+    env:
+      OPENJKDF2_BUILD_DIR: build_android_aarch64_mots
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Fetch commit history
+        # versionCode is the commit count: fetch the main repo's commits only
+        # (no file contents, no submodule history)
+        run: git fetch --unshallow --filter=tree:0 --no-recurse-submodules origin
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ github.job }}
+          max-size: 2G
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - name: Install Packages
+        run: |
+          sudo apt-get update -qq &&
+          sudo apt-get install -y --no-install-suggests --no-install-recommends \
+                       build-essential cmake make python3 python3-pip bison imagemagick &&
+          sudo pip3 install cogapp
+      - name: Generate CMake Build System
+        run: |
+          export ANDROID_NDK_HOME="$ANDROID_NDK_LATEST_HOME"
+          export OPENJKDF2_RELEASE_COMMIT="$(git log -1 --format=%H)" \
+                 OPENJKDF2_RELEASE_COMMIT_SHORT="$(git rev-parse --short=8 HEAD)"
+          cmake --toolchain cmake_modules/toolchain_android_aarch64.cmake \
+                -DCMAKE_BUILD_TYPE=Release \
+                -B "$OPENJKDF2_BUILD_DIR"
+      - name: Make
+        run: make -C "$OPENJKDF2_BUILD_DIR" -j $(nproc) openjkdf2-armv8a || make -C "$OPENJKDF2_BUILD_DIR" -j1 openjkdf2-armv8a
+      - name: Gradle (MoTS flavor)
+        env:
+          OPENJKDF2_KEYSTORE_B64: ${{ secrets.OPENJKDF2_KEYSTORE_B64 }}
+          OPENJKDF2_KEYSTORE_PASSWORD: ${{ secrets.OPENJKDF2_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$OPENJKDF2_KEYSTORE_B64" ]; then
+            export OPENJKDF2_KEYSTORE_FILE="$RUNNER_TEMP/openjkdf2-release.jks"
+            echo "$OPENJKDF2_KEYSTORE_B64" | base64 -d > "$OPENJKDF2_KEYSTORE_FILE"
+          elif [ "$IS_RELEASE" = "true" ]; then
+            echo "::error::Secret OPENJKDF2_KEYSTORE_B64 is missing, refusing to release an APK signed with a throwaway key"
+            exit 1
+          else
+            echo "::warning::No signing secret: this APK is signed with the runner's debug key and cannot update a release install"
+          fi
+          LIBS=packaging/android-project/app/src/main/jniLibs/arm64-v8a
+          mkdir -p "$LIBS"
+          cp "$OPENJKDF2_BUILD_DIR/libopenjkdf2-armv8a.so" "$LIBS/libmain.so"
+          cp "$(find "$OPENJKDF2_BUILD_DIR" -name libopenal.so | head -1)" "$LIBS/"
+          cp "$(find "$OPENJKDF2_BUILD_DIR" -name libSDL3.so | head -1)" "$LIBS/"
+          cp "$(find "$OPENJKDF2_BUILD_DIR" -name libSDL3_mixer.so | head -1)" "$LIBS/"
+          cd packaging/android-project
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleMotsDebug
+          cp app/build/outputs/apk/mots/debug/app-mots-debug.apk "$GITHUB_WORKSPACE/Mysteries_of_the_Sith-android-arm64-v8a.apk"
+          rm -f "$RUNNER_TEMP/openjkdf2-release.jks"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-mots
+          path: Mysteries_of_the_Sith-android-arm64-v8a.apk
+      - name: Add to release
+        if: env.IS_RELEASE == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Release that every job of this run uploads into. Two digits at
+          # least: GitHub lists releases by tag name, so build-9 would sort
+          # above build-10.
+          RELEASE_TAG=$(printf 'build-%02d' "$GITHUB_RUN_NUMBER")
+          # Whichever job finishes first creates the release; a concurrent
+          # create fails on the existing tag, which is fine.
+          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
+            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"                --title "$RELEASE_TAG (${GITHUB_SHA:0:8})" --generate-notes ||
+            gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
+          gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber Mysteries_of_the_Sith-android-arm64-v8a.apk
