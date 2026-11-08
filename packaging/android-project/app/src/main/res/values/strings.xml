@@ -4,10 +4,11 @@
     <string name="setup_not_found">Not found: select its folder</string>
     <string name="permission_message">To run games from a folder of your choice, OpenJKDF2 needs the \"All files access\" permission. It is only used to read the game files and to write saves and settings in the folders you pick.</string>
     <string name="folder_bad_location">Pick a folder on the device storage or SD card.</string>
-    <string name="folder_not_jk">This folder doesn\'t contain Jedi Knight (Episode/JK1.GOB and Resource/JK_.CD).</string>
-    <string name="folder_not_mots">This folder doesn\'t contain Mysteries of the Sith (Episode/JKM.GOO and Resource/JK_.CD).</string>
+    <string name="folder_not_jk">Jedi Knight files are missing from this folder.</string>
+    <string name="folder_not_mots">Mysteries of the Sith files are missing from this folder.</string>
     <string name="setup_message_jk">Jedi Knight files not found. Enter the path of the folder that contains them (Episode, Resource…).</string>
     <string name="setup_message_mots">Mysteries of the Sith files not found. Enter the path of the folder that contains them (Episode, Resource…).</string>
+    <string name="setup_missing_files">Missing: %1$s</string>
     <string name="setup_browse">Browse…</string>
     <string name="setup_folder_invalid">The saved folder no longer contains the game files: %1$s</string>
 

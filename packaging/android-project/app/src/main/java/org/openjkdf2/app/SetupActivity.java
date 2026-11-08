@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -103,8 +104,7 @@ public class SetupActivity extends Activity {
                     path = path.substring(0, path.length() - 1);
                 }
                 if (!GameFolders.isGameDir(new File(path), mMots)) {
-                    Toast.makeText(this, mMots ? R.string.folder_not_mots : R.string.folder_not_jk,
-                                   Toast.LENGTH_LONG).show();
+                    showNotGameDir(path);
                     return;
                 }
                 GameFolders.setPicked(this, mMots, path);
@@ -117,6 +117,12 @@ public class SetupActivity extends Activity {
             mMenu.primaryButton(getString(android.R.string.ok), submit);
         });
         mMenu.show(0);
+    }
+
+    private void showNotGameDir(String path) {
+        String missing = TextUtils.join(", ", GameFolders.missingFiles(new File(path), mMots));
+        Toast.makeText(this, getString(mMots ? R.string.folder_not_mots : R.string.folder_not_jk)
+                       + "\n" + getString(R.string.setup_missing_files, missing), Toast.LENGTH_LONG).show();
     }
 
     private void startGame() {
@@ -186,8 +192,7 @@ public class SetupActivity extends Activity {
         if (path == null) {
             Toast.makeText(this, R.string.folder_bad_location, Toast.LENGTH_LONG).show();
         } else if (!GameFolders.isGameDir(new File(path), mMots)) {
-            Toast.makeText(this, mMots ? R.string.folder_not_mots : R.string.folder_not_jk,
-                           Toast.LENGTH_LONG).show();
+            showNotGameDir(path);
         } else {
             GameFolders.setPicked(this, mMots, path);
             mForcePick = false; // onResume then starts the game

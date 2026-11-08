@@ -8,6 +8,7 @@ import android.system.Os;
 import android.util.Log;
 
 import java.io.File;
+import java.util.ArrayList;
 
 /**
     Where each game's files live: the folder whose path the user gave
@@ -46,10 +47,31 @@ final class GameFolders {
         prefs(context).edit().putString(key(bMots), path).commit();
     }
 
-    /** Whether dir holds this game's files (any letter case, like the engine). */
+    // Same lists as aRequiredAssets / aRequiredAssetsMots in src/Main/InstallHelper.c:
+    // a folder the engine would reject must be refused here, not at game start.
+    private static final String[] JK_FILES = {
+        "episode/JK1.gob", "episode/JK1CTF.gob", "episode/JK1MP.gob",
+        "resource/Res1hi.gob", "resource/Res2.gob", "resource/jk_.cd",
+    };
+    private static final String[] MOTS_FILES = {
+        "episode/JKM_KFY.goo", "episode/JKM_MP.goo", "episode/JKM_SABER.goo", "episode/JKM.goo",
+        "resource/Jkmres.goo", "resource/JKMsndLO.goo", "resource/jk_.cd",
+    };
+
+    /** The required game files dir lacks (any letter case, like the engine); empty if complete. */
+    static ArrayList<String> missingFiles(File dir, boolean bMots) {
+        ArrayList<String> missing = new ArrayList<>();
+        for (String rel : bMots ? MOTS_FILES : JK_FILES) {
+            if (findCaseInsensitive(dir, rel) == null) {
+                missing.add(rel);
+            }
+        }
+        return missing;
+    }
+
+    /** Whether dir holds all of this game's files. */
     static boolean isGameDir(File dir, boolean bMots) {
-        return findCaseInsensitive(dir, "resource/jk_.cd") != null
-            && findCaseInsensitive(dir, bMots ? "episode/JKM.goo" : "episode/JK1.gob") != null;
+        return missingFiles(dir, bMots).isEmpty();
     }
 
     static File findCaseInsensitive(File base, String relPath) {
