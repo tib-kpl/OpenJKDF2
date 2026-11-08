@@ -141,7 +141,7 @@ final class GameSettingsMenu extends Dialog {
         }
         Button resume = action(text("Reprendre", "Resume"), this::dismiss);
         resume.setBackground(primaryBackground());
-        resume.setTextColor(bMots ? 0xff291817 : 0xff292218);
+        resume.setTextColor(bMots ? 0xff1f1229 : 0xff292218);
         rail.addView(resume, new LinearLayout.LayoutParams(-1, dp(46)));
         TextView close = label("Select + Start", 11, muted);
         close.setGravity(Gravity.CENTER);
@@ -304,7 +304,7 @@ final class GameSettingsMenu extends Dialog {
         dialog.show();
         dialog.getWindow().setWindowAnimations(0);
         immersive(dialog.getWindow());
-        dialog.getWindow().setBackgroundDrawable(plate(bMots ? 0xff2a1815 : 0xff1c242e, 0xff55524b));
+        dialog.getWindow().setBackgroundDrawable(plate(bMots ? 0xff1f1429 : 0xff2a1d10, 0xff55524b));
         for (int which : new int[]{AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_POSITIVE}) {
             Button button = dialog.getButton(which);
             button.setFocusableInTouchMode(true);
@@ -318,17 +318,17 @@ final class GameSettingsMenu extends Dialog {
 
     private GradientDrawable plate(int fill, int stroke) {
         GradientDrawable drawable = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{fill, bMots ? 0xff141010 : 0xff141c25});
+                new int[]{fill, bMots ? 0xff100a18 : 0xff1a1109});
         drawable.setCornerRadius(dp(6)); drawable.setStroke(dp(1), stroke);
         return drawable;
     }
 
     private StateListDrawable cardBackground() {
         StateListDrawable drawable = new StateListDrawable();
-        drawable.addState(new int[]{android.R.attr.state_pressed}, plate(bMots ? 0xff4a2018 : 0xff38282e, accent));
-        drawable.addState(new int[]{android.R.attr.state_focused}, plate(bMots ? 0xff3a1814 : 0xff28282e, accent));
-        drawable.addState(new int[]{android.R.attr.state_selected}, plate(bMots ? 0xff3a1814 : 0xff28282e, accent));
-        drawable.addState(new int[]{}, plate(bMots ? 0xff221412 : 0xff222b35, 0xff3b3e3f));
+        drawable.addState(new int[]{android.R.attr.state_pressed}, plate(bMots ? 0xff3d2456 : 0xff4a3018, accent));
+        drawable.addState(new int[]{android.R.attr.state_focused}, plate(bMots ? 0xff30194a : 0xff3a2812, accent));
+        drawable.addState(new int[]{android.R.attr.state_selected}, plate(bMots ? 0xff30194a : 0xff3a2812, accent));
+        drawable.addState(new int[]{}, plate(bMots ? 0xff1a1124 : 0xff2a1d10, 0xff3b3e3f));
         return drawable;
     }
 
@@ -344,10 +344,10 @@ final class GameSettingsMenu extends Dialog {
     private StateListDrawable primaryBackground() {
         StateListDrawable drawable = new StateListDrawable();
         GradientDrawable normal = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{accent, bMots ? 0xffb84028 : 0xff305090});
+                new int[]{accent, bMots ? 0xff6c3483 : 0xffa3501a});
         normal.setCornerRadius(dp(5));
         GradientDrawable focused = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{bMots ? 0xffff8060 : 0xff7090d0, accent});
+                new int[]{bMots ? 0xffd7a8f0 : 0xffffb070, accent});
         focused.setCornerRadius(dp(5)); focused.setStroke(dp(2), ink);
         drawable.addState(new int[]{android.R.attr.state_focused}, focused);
         drawable.addState(new int[]{android.R.attr.state_pressed}, focused);
@@ -468,7 +468,7 @@ final class GameSettingsMenu extends Dialog {
         bar.setProgressDrawable(track);
         GradientDrawable thumb = new GradientDrawable();
         thumb.setShape(GradientDrawable.OVAL); thumb.setColor(accent);
-        thumb.setStroke(dp(2), bMots ? 0xfff8a080 : 0xffc0d0f0);
+        thumb.setStroke(dp(2), bMots ? 0xffe0c0f5 : 0xfff8d0a0);
         thumb.setSize(dp(12), dp(12));
         bar.setThumb(thumb); bar.setMax(max); bar.setProgress(initial); bar.setKeyProgressIncrement(1);
         bar.setContentDescription(title + ". " + text("Par défaut : ", "Default: ") + values[defaultIndex]);
@@ -571,7 +571,7 @@ final class GameSettingsMenu extends Dialog {
         @Override public void draw(Canvas canvas) {
             if (!selected) return;
             RectF box = new RectF(getBounds()); box.inset(dp(1), dp(1));
-            paint.setColor(bMots ? 0xff2a1410 : 0xff302429);
+            paint.setColor(bMots ? 0xff1f1230 : 0xff33220f);
             canvas.drawRoundRect(box, dp(5), dp(5), paint);
             paint.setColor(accent);
             canvas.drawRoundRect(new RectF(box.left, box.top + dp(10), box.left + dp(3), box.bottom - dp(10)), dp(1), dp(1), paint);
@@ -635,12 +635,12 @@ final class GameSettingsMenu extends Dialog {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         @Override public void draw(Canvas canvas) {
             Rect bounds = getBounds();
-            int darkBg = bMots ? 0xff181010 : 0xff101518;
-            int railBg = bMots ? 0xff100808 : 0xff1c1d1b;
-            int accentGradient = bMots ? 0x158e3020 : 0x1530508c;
-            int borderColor = bMots ? 0xff6c3020 : 0xff5c4543;
+            int darkBg = bMots ? 0xff120a1c : 0xff150d06;
+            int railBg = bMots ? 0xff0d0614 : 0xff1a120a;
+            int accentGradient = bMots ? 0x159b59b6 : 0x15e67e22;
+            int borderColor = bMots ? 0xff7d4a96 : 0xff8a5a2a;
             paint.setShader(new LinearGradient(0, 0, bounds.width(), bounds.height(),
-                    bMots ? 0xff201818 : 0xff202832, darkBg, Shader.TileMode.CLAMP));
+                    bMots ? 0xff1f1630 : 0xff2a1c0e, darkBg, Shader.TileMode.CLAMP));
             canvas.drawRect(bounds, paint); paint.setShader(null);
             paint.setColor(railBg);
             canvas.drawRect(0, 0, dp(railWidth), bounds.height(), paint);

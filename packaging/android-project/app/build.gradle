@@ -58,23 +58,27 @@ android {
             dimension "game"
             applicationId "org.openjkdf2.app.jk"
             resValue "string", "app_name", "Jedi Knight: Dark Forces II"
+            resValue "bool", "is_mots", "false"
             manifestPlaceholders = [mainActivity: "org.openjkdf2.app.GameActivity",
                                      appIcon: "@mipmap/ic_launcher",
                                      appLabel: "@string/app_name",
                                      launchMode: "singleInstance",
                                      processName: "",
-                                     taskAffinity: ""]
+                                     taskAffinity: "",
+                                     setupAffinity: "org.openjkdf2.app.jk.setup"]
         }
         mots {
             dimension "game"
             applicationId "org.openjkdf2.app.mots"
             resValue "string", "app_name", "Mysteries of the Sith"
+            resValue "bool", "is_mots", "true"
             manifestPlaceholders = [mainActivity: "org.openjkdf2.app.MotsActivity",
                                      appIcon: "@mipmap/ic_launcher_mots",
                                      appLabel: "@string/app_name",
                                      launchMode: "singleTask",
                                      processName: ":mots",
-                                     taskAffinity: "org.openjkdf2.app.mots"]
+                                     taskAffinity: "org.openjkdf2.app.mots",
+                                     setupAffinity: "org.openjkdf2.app.mots.setup"]
         }
     }
     // Fixed signing key so CI-built APKs (built on fresh runners) install

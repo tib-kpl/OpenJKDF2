@@ -10,9 +10,9 @@ import android.util.Log;
 import java.io.File;
 
 /**
-    Where each game's files live: a folder the user picked anywhere on the
-    device storage (ChooserActivity), else the app's own data dir
-    (<external files dir>/jk1 or /mots, filled by the install helper).
+    Where each game's files live: the folder whose path the user gave
+    (SetupActivity), anywhere on the device storage. There is no app-private
+    copy of the game: the game runs from that folder only.
 
     The native side reads the picked folders from OPENJKDF2_ROOT and
     OPENJKMOTS_ROOT (see InstallHelper_GetLocalDataDir), which
@@ -44,24 +44,6 @@ final class GameFolders {
     static void setPicked(Context context, boolean bMots, String path) {
         // commit(), not apply(): the game may start in another process right after
         prefs(context).edit().putString(key(bMots), path).commit();
-    }
-
-    static File appDataDir(Context context, boolean bMots) {
-        File base = context.getExternalFilesDir(null);
-        return base == null ? null : new File(base, bMots ? "mots" : "jk1");
-    }
-
-    /** The folder this game will run from, or null if it is not installed. */
-    static File resolve(Context context, boolean bMots) {
-        String picked = getPicked(context, bMots);
-        if (picked != null && isGameDir(new File(picked), bMots)) {
-            return new File(picked);
-        }
-        File appDir = appDataDir(context, bMots);
-        if (appDir != null && isGameDir(appDir, bMots)) {
-            return appDir;
-        }
-        return null;
     }
 
     /** Whether dir holds this game's files (any letter case, like the engine). */

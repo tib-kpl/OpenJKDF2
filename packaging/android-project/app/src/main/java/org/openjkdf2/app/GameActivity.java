@@ -1,22 +1,12 @@
 package org.openjkdf2.app;
 
-import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.ActivityNotFoundException;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.DocumentsContract;
-import android.provider.Settings;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.InputDevice;
-import android.widget.Toast;
 
 import java.io.File;
 
@@ -28,17 +18,11 @@ import org.libsdl.app.SDLActivity;
     Handles game folder setup on first launch (previously done by ChooserActivity).
 */
 public class GameActivity extends SDLActivity {
-    private static final int REQUEST_PICK_FOLDER = 1;
-    private static final int REQUEST_STORAGE_PERMISSION = 2;
-    private static final String PREF_SETUP_DONE = "setup_done";
-
-    private AlertDialog mDialog;
-    private boolean mAwaitingPermission;
-
     // Overlay settings menu (Unreal-Android style)
     private View mSettingsGear;
     private GameSettingsMenu mSettingsMenu;
     private boolean mSelectHeld, mStartHeld;
+    private boolean mRestarting;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,159 +30,37 @@ public class GameActivity extends SDLActivity {
         GameFolders.exportToEnvironment(this);
         super.onCreate(savedInstanceState);
 
-        // Install the overlay settings gear (touch) - JK uses orange theme
         mSettingsGear = AndroidSettingsGear.install(this, this::openSettingsMenu, false);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-
-        if (mDialog != null && mDialog.isShowing()) {
-            return;
-        }
-
-        if (mAwaitingPermission) {
-            mAwaitingPermission = false;
-            if (hasStoragePermission()) {
-                openFolderPicker();
-            } else {
-                showSetup();
-            }
-        } else {
-            route();
+        // Resumed (recents list...) without going through SetupActivity: the
+        // folder may have vanished since the last launch.
+        String path = GameFolders.getPicked(this, false);
+        if (path == null || !GameFolders.isGameDir(new File(path), false)) {
+            restartThroughSetup(false);
         }
     }
 
-    private void route() {
-        boolean hasJk = GameFolders.resolve(this, false) != null;
-
-        if (hasJk) {
-            startGame();
-        } else {
-            // No folder configured yet - show setup dialog to pick folder
-            showSetup();
-        }
-    }
-
-    private void showSetup() {
-        mDialog = new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle(R.string.setup_title)
-            .setMessage(getString(R.string.setup_message_jk))
-            .setCancelable(false)
-            .setPositiveButton(R.string.setup_choose_folder, (d, which) -> pickFolder())
-            .setNegativeButton(android.R.string.cancel, (d, which) -> finish())
-            .setOnCancelListener(d -> finish())
-            .show();
-    }
-
-    private void pickFolder() {
-        if (hasStoragePermission()) {
-            openFolderPicker();
-        } else {
-            requestStoragePermission();
-        }
-    }
-
-    private boolean hasStoragePermission() {
-        if (Build.VERSION.SDK_INT >= 30) {
-            return Environment.isExternalStorageManager();
-        }
-        if (Build.VERSION.SDK_INT >= 23) {
-            return checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
-        }
-        return true;
-    }
-
-    private void requestStoragePermission() {
-        if (Build.VERSION.SDK_INT < 30) {
-            requestPermissions(new String[] {
-                Manifest.permission.READ_EXTERNAL_STORAGE,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            }, REQUEST_STORAGE_PERMISSION);
-            return;
-        }
-
-        mAwaitingPermission = true;
-        try {
-            startActivity(new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
-                                     Uri.parse("package:" + getPackageName())));
-        } catch (ActivityNotFoundException e) {
-            startActivity(new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION));
-        }
+    /** Back to the folder setup; this process is killed so the game restarts with the new folder. */
+    private void restartThroughSetup(boolean forcePick) {
+        if (mRestarting) return;
+        mRestarting = true;
+        Intent intent = new Intent(this, SetupActivity.class);
+        intent.putExtra(SetupActivity.EXTRA_FORCE_PICK, forcePick);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode != REQUEST_STORAGE_PERMISSION) {
-            return;
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mRestarting) {
+            android.os.Process.killProcess(android.os.Process.myPid());
         }
-        if (hasStoragePermission()) {
-            openFolderPicker();
-        } else {
-            showSetup();
-        }
-    }
-
-    private void openFolderPicker() {
-        try {
-            startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), REQUEST_PICK_FOLDER);
-        } catch (ActivityNotFoundException e) {
-            Toast.makeText(this, R.string.folder_bad_location, Toast.LENGTH_LONG).show();
-            showSetup();
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (InstallHelperSAF.onActivityResult(requestCode, resultCode, data)) {
-            return;
-        }
-        if (requestCode != REQUEST_PICK_FOLDER) {
-            super.onActivityResult(requestCode, resultCode, data);
-            return;
-        }
-
-        if (resultCode != RESULT_OK || data == null || data.getData() == null) {
-            showSetup();
-            return;
-        }
-
-        String path = treeUriToPath(data.getData());
-        if (path == null) {
-            Toast.makeText(this, R.string.folder_bad_location, Toast.LENGTH_LONG).show();
-            showSetup();
-        } else if (!GameFolders.isGameDir(new File(path), false)) {
-            Toast.makeText(this, R.string.folder_not_jk, Toast.LENGTH_LONG).show();
-            showSetup();
-        } else {
-            GameFolders.setPicked(this, false, path);
-            // Folder valid, game will start on next resume
-        }
-    }
-
-    /** Filesystem path of a folder picked with ACTION_OPEN_DOCUMENT_TREE, if it has one. */
-    private static String treeUriToPath(Uri treeUri) {
-        if (!"com.android.externalstorage.documents".equals(treeUri.getAuthority())) {
-            return null;
-        }
-        String docId = DocumentsContract.getTreeDocumentId(treeUri); // e.g. "primary:Games/JK"
-        int colon = docId.indexOf(':');
-        if (colon < 0) {
-            return null;
-        }
-        String volume = docId.substring(0, colon);
-        String relPath = docId.substring(colon + 1);
-
-        String base = "primary".equalsIgnoreCase(volume)
-            ? Environment.getExternalStorageDirectory().getPath()
-            : "/storage/" + volume;
-        return relPath.isEmpty() ? base : base + "/" + relPath;
-    }
-
-    private void startGame() {
-        // Game starts automatically via SDL
     }
 
     private void openSettingsMenu() {
@@ -211,7 +73,7 @@ public class GameActivity extends SDLActivity {
 
     private void handleSettingsResult(int result) {
         if (result == GameSettingsMenu.CHANGE_FOLDER) {
-            openFolderPicker();
+            restartThroughSetup(true);
         }
         // Other results handled inline
     }
@@ -241,14 +103,13 @@ public class GameActivity extends SDLActivity {
 
     private void buildGamePage() {
         mSettingsMenu.section(getString(R.string.menu_game_data));
-        File root = GameFolders.resolve(this, false);
-        mSettingsMenu.path(root != null ? root.getAbsolutePath() : getString(R.string.setup_not_found));
+        String root = GameFolders.getPicked(this, false);
+        mSettingsMenu.path(root != null ? root : getString(R.string.setup_not_found));
         mSettingsMenu.button(getString(R.string.menu_change_folder), () -> {
             mSettingsMenu.confirm(getString(R.string.menu_confirm_change_folder),
                     getString(R.string.menu_continue), () -> {
                         mSettingsMenu.setResult(GameSettingsMenu.CHANGE_FOLDER);
                         mSettingsMenu.dismiss();
-                        openFolderPicker();
                     });
         });
         mSettingsMenu.section(getString(R.string.menu_defaults));

@@ -95,14 +95,28 @@
             android:process="${processName}"
             android:taskAffinity="${taskAffinity}"
             >
+            <!-- Let Android know that we can handle some USB devices and should receive this event -->
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+            </intent-filter>
+        </activity>
+
+        <!-- Launcher entry: checks the game folder on every launch (asking for it
+             when unknown or no longer valid), then starts ${mainActivity}. Own
+             process so that the game process can be killed and restarted when
+             the folder changes. -->
+        <activity android:name=".SetupActivity"
+            android:label="${appLabel}"
+            android:icon="${appIcon}"
+            android:theme="@android:style/Theme.NoTitleBar"
+            android:process=":setup"
+            android:taskAffinity="${setupAffinity}"
+            android:excludeFromRecents="true"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.GAME" />
-            </intent-filter>
-            <!-- Let Android know that we can handle some USB devices and should receive this event -->
-            <intent-filter>
-                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
             </intent-filter>
         </activity>
 
