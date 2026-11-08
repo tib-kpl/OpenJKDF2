@@ -81,38 +81,24 @@
      
         <!-- Launcher entry: each flavor has its own main activity (GameActivity for JK,
              MotsActivity for MoTS). The placeholder ${mainActivity} is replaced
-             by the flavor-specific value in build.gradle. -->
+             by the flavor-specific value in build.gradle. Additional attributes
+             like process/taskAffinity for MoTS are injected via manifestPlaceholders. -->
         <activity android:name="${mainActivity}"
             android:label="${appLabel}"
             android:icon="${appIcon}"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
             android:alwaysRetainTaskState="true"
-            android:launchMode="singleInstance"
+            android:launchMode="${launchMode}"
             android:configChanges="layoutDirection|locale|orientation|uiMode|screenLayout|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
             android:preferMinimalPostProcessing="true"
             android:exported="true"
+            android:process="${processName}"
+            android:taskAffinity="${taskAffinity}"
             >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Let Android know that we can handle some USB devices and should receive this event -->
-            <intent-filter>
-                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
-            </intent-filter>
-        </activity>
-
-        <activity android:name="MotsActivity"
-            android:label="${appLabel}"
-            android:icon="${appIcon}"
-            android:process=":mots"
-            android:taskAffinity="org.openjkdf2.app.mots"
-            android:alwaysRetainTaskState="true"
-            android:launchMode="singleTask"
-            android:configChanges="layoutDirection|locale|orientation|uiMode|screenLayout|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
-            android:preferMinimalPostProcessing="true"
-            android:exported="true"
-            >
             <!-- Let Android know that we can handle some USB devices and should receive this event -->
             <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
