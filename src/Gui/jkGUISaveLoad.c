@@ -412,11 +412,18 @@ int jkGuiSaveLoad_Show(int bIsSave)
         {
 #ifdef TARGET_ANDROID
             // Added: on Android, Save writes the game right away under the
-            // auto name (level + date/time) instead of asking for a file name
-            // and a confirmation. Falls back to the menu if there is no name
-            // (no clock or no level).
-            if ( bIsSave && jkGuiSaveLoad_autoName[0] )
+            // auto name (level + date/time, unique so nothing is overwritten)
+            // instead of asking for a file name and a confirmation.
+            if ( bIsSave )
+            {
+                // No clock/level: still save, under a plain name and a free slot file
+                if ( !_wcslen(jkGuiSaveLoad_word_559830) )
+                {
+                    stdString_CharToWchar(jkGuiSaveLoad_word_559830, "Save", 255);
+                    jkGuiSaveLoad_word_559830[255] = 0;
+                }
                 v2 = 1;
+            }
             else
 #endif
             v2 = jkGuiRend_DisplayAndReturnClicked(&jkGuiSaveLoad_menu);
