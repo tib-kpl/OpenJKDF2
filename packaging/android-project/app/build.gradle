@@ -9,7 +9,7 @@ else {
 
 // Derive versioning from git: versionCode is the total commit count
 // (monotonic, so every build counts as an update and launcher/package-info
-// caches invalidate), versionName is "<latest tag>.<commit count>".
+// caches invalidate), versionName comes from CI or local git.
 def gitCmd = { String... args ->
     try {
         def proc = args.execute(null, rootDir)
@@ -22,7 +22,11 @@ def gitCmd = { String... args ->
     }
 }
 def gitCommitCount = (gitCmd("git", "rev-list", "--count", "HEAD") ?: "1").toInteger()
-def gitLatestTag = gitCmd("git", "describe", "--tags", "--abbrev=0") ?: "untagged"
+
+// CI passes version via -PversionName=... and -PversionCode=... (optional override)
+// Fallback: local git derive
+def appVersionName = project.hasProperty('versionName') ? project.versionName : "0.0.0-dev.${gitCommitCount}"
+def appVersionCode = project.hasProperty('versionCode') ? project.versionCode.toInteger() : gitCommitCount
 
 android {
     if (buildAsApplication) {
@@ -33,7 +37,8 @@ android {
         minSdkVersion 19
         targetSdkVersion 34
         versionCode gitCommitCount
-        versionName "${gitLatestTag}.${gitCommitCount}"
+        versionName appVersionName
+        versionCode appVersionCode
         externalNativeBuild {
             ndkBuild {
                 arguments "APP_PLATFORM=android-19"

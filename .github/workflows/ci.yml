@@ -277,7 +277,10 @@ jobs:
           cp "$(find "$OPENJKDF2_BUILD_DIR" -name libSDL3_mixer.so | head -1)" "$LIBS/"
           cd packaging/android-project
           chmod +x gradlew
-          ./gradlew --no-daemon assembleJkDebug
+          # Version from CI: 1.0.<run_number> (release) or 1.0.<run_number>-dev (dev)
+          VER_NAME="1.0.${{ github.run_number }}"
+          VER_CODE="${{ github.run_number }}"
+          ./gradlew --no-daemon -PversionName="$VER_NAME" -PversionCode="$VER_CODE" assembleJkDebug
           cp app/build/outputs/apk/jk/debug/app-jk-debug.apk "$GITHUB_WORKSPACE/Jedi_Knight-android-arm64-v8a.apk"
           rm -f "$RUNNER_TEMP/openjkdf2-release.jks"
       - uses: actions/upload-artifact@v4
@@ -360,7 +363,10 @@ jobs:
           cp "$(find "$OPENJKDF2_BUILD_DIR" -name libSDL3_mixer.so | head -1)" "$LIBS/"
           cd packaging/android-project
           chmod +x gradlew
-          ./gradlew --no-daemon assembleMotsDebug
+          # Version from CI: 1.0.<run_number> (release) or 1.0.<run_number>-dev (dev)
+          VER_NAME="1.0.${{ github.run_number }}"
+          VER_CODE="${{ github.run_number }}"
+          ./gradlew --no-daemon -PversionName="$VER_NAME" -PversionCode="$VER_CODE" assembleMotsDebug
           cp app/build/outputs/apk/mots/debug/app-mots-debug.apk "$GITHUB_WORKSPACE/Mysteries_of_the_Sith-android-arm64-v8a.apk"
           rm -f "$RUNNER_TEMP/openjkdf2-release.jks"
       - uses: actions/upload-artifact@v4
