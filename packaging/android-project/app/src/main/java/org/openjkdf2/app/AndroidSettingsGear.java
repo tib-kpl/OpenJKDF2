@@ -37,7 +37,7 @@ final class AndroidSettingsGear {
                 paint.setColor(0x66000000);
                 canvas.drawCircle(cx, cy, unit * .85f, paint);
                 // Gear teeth color - adapted to game
-                int gearColor = bMots ? 0xffdd5533 : 0xff4466aa; // MoTS: orange-red, JK: blue
+                int gearColor = bMots ? 0xff9b59b6 : 0xffe67e22; // MoTS: purple, JK: orange
                 paint.setColor(gearColor);
                 for (int tooth = 0; tooth < 8; tooth++) {
                     canvas.save();

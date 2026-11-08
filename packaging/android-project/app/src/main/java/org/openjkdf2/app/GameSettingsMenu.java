@@ -53,8 +53,8 @@ final class GameSettingsMenu extends Dialog {
         super(activity, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
         this.activity = activity;
         this.bMots = bMots;
-        // JK: blue accent, MoTS: orange-red accent
-        this.accent = bMots ? 0xffdd5533 : 0xff4466aa;
+        // JK: orange accent, MoTS: purple accent
+        this.accent = bMots ? 0xff9b59b6 : 0xffe67e22;
         setCanceledOnTouchOutside(false);
     }
 
