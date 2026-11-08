@@ -1,19 +1,13 @@
 #!/bin/bash
-base=../icon.png
+# Launcher icons: crops of the official box art of each game
+# (icons/jk_launcher.png: Jedi Knight: Dark Forces II, GOG store art;
+#  icons/mots_launcher.png: Mysteries of the Sith, original cover).
 outdir=app/src/main/res
 
-mkdir -p $outdir
-
-convert "$base" -resize '48x48'     -unsharp 1x4 "$outdir/mipmap-mdpi/ic_launcher.png"
-convert "$base" -resize '72x72'     -unsharp 1x4 "$outdir/mipmap-hdpi/ic_launcher.png"
-convert "$base" -resize '96x96'     -unsharp 1x4 "$outdir/mipmap-xhdpi/ic_launcher.png"
-convert "$base" -resize '144x144'     -unsharp 1x4 "$outdir/mipmap-xxhdpi/ic_launcher.png"
-convert "$base" -resize '192x192'   -unsharp 1x4 "$outdir/mipmap-xxxhdpi/ic_launcher.png"
-
-base_mots=../mots_icon.png
-
-convert "$base_mots" -filter point -resize '48x48' "$outdir/mipmap-mdpi/ic_launcher_mots.png"
-convert "$base_mots" -filter point -resize '72x72' "$outdir/mipmap-hdpi/ic_launcher_mots.png"
-convert "$base_mots" -filter point -resize '96x96' "$outdir/mipmap-xhdpi/ic_launcher_mots.png"
-convert "$base_mots" -filter point -resize '144x144' "$outdir/mipmap-xxhdpi/ic_launcher_mots.png"
-convert "$base_mots" -filter point -resize '192x192' "$outdir/mipmap-xxxhdpi/ic_launcher_mots.png"
+for pair in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+    dir="$outdir/mipmap-${pair%:*}"
+    size="${pair#*:}"
+    mkdir -p "$dir"
+    convert icons/jk_launcher.png   -filter Lanczos -resize "${size}x${size}" "$dir/ic_launcher.png"
+    convert icons/mots_launcher.png -filter Lanczos -resize "${size}x${size}" "$dir/ic_launcher_mots.png"
+done
