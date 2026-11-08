@@ -86,14 +86,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Release that every job of this run uploads into. Two digits at
-          # least: GitHub lists releases by tag name, so build-9 would sort
-          # above build-10.
-          RELEASE_TAG=$(printf 'build-%02d' "$GITHUB_RUN_NUMBER")
-          # Whichever job finishes first creates the release; a concurrent
-          # create fails on the existing tag, which is fine.
+          # Semantic version tag for Obtainium (v1.0.<run_number>)
+          RELEASE_TAG="v1.0.${{ github.run_number }}"
+          # Create or get release with semantic version tag
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
-            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"                --title "$RELEASE_TAG (${GITHUB_SHA:0:8})" --generate-notes ||
+            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "OpenJKDF2 $RELEASE_TAG" --generate-notes ||
             gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
           gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber OpenJKDF2-linux-x86_64.tar.gz
 
@@ -132,14 +130,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Release that every job of this run uploads into. Two digits at
-          # least: GitHub lists releases by tag name, so build-9 would sort
-          # above build-10.
-          RELEASE_TAG=$(printf 'build-%02d' "$GITHUB_RUN_NUMBER")
-          # Whichever job finishes first creates the release; a concurrent
-          # create fails on the existing tag, which is fine.
+          # Semantic version tag for Obtainium (v1.0.<run_number>)
+          RELEASE_TAG="v1.0.${{ github.run_number }}"
+          # Create or get release with semantic version tag
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
-            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"                --title "$RELEASE_TAG (${GITHUB_SHA:0:8})" --generate-notes ||
+            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "OpenJKDF2 $RELEASE_TAG" --generate-notes ||
             gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
           gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber OpenJKDF2-macos-arm64.zip
 
@@ -206,14 +202,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Release that every job of this run uploads into. Two digits at
-          # least: GitHub lists releases by tag name, so build-9 would sort
-          # above build-10.
-          RELEASE_TAG=$(printf 'build-%02d' "$GITHUB_RUN_NUMBER")
-          # Whichever job finishes first creates the release; a concurrent
-          # create fails on the existing tag, which is fine.
+          # Semantic version tag for Obtainium (v1.0.<run_number>)
+          RELEASE_TAG="v1.0.${{ github.run_number }}"
+          # Create or get release with semantic version tag
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
-            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"                --title "$RELEASE_TAG (${GITHUB_SHA:0:8})" --generate-notes ||
+            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "OpenJKDF2 $RELEASE_TAG" --generate-notes ||
             gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
           gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber OpenJKDF2-win64.zip
 
@@ -292,14 +286,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Release that every job of this run uploads into. Two digits at
-          # least: GitHub lists releases by tag name, so build-9 would sort
-          # above build-10.
-          RELEASE_TAG=$(printf 'build-%02d' "$GITHUB_RUN_NUMBER")
-          # Whichever job finishes first creates the release; a concurrent
-          # create fails on the existing tag, which is fine.
+          # Semantic version tag for Obtainium (v1.0.<run_number>)
+          RELEASE_TAG="v1.0.${{ github.run_number }}"
+          # Create or get release with semantic version tag
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
-            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"                --title "$RELEASE_TAG (${GITHUB_SHA:0:8})" --generate-notes ||
+            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "OpenJKDF2 $RELEASE_TAG" --generate-notes ||
             gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
           gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber Jedi_Knight-android-arm64-v8a.apk
 
@@ -378,13 +370,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Release that every job of this run uploads into. Two digits at
-          # least: GitHub lists releases by tag name, so build-9 would sort
-          # above build-10.
-          RELEASE_TAG=$(printf 'build-%02d' "$GITHUB_RUN_NUMBER")
-          # Whichever job finishes first creates the release; a concurrent
-          # create fails on the existing tag, which is fine.
+          # Semantic version tag for Obtainium (v1.0.<run_number>)
+          RELEASE_TAG="v1.0.${{ github.run_number }}"
+          # Create or get release with semantic version tag
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
-            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"                --title "$RELEASE_TAG (${GITHUB_SHA:0:8})" --generate-notes ||
+            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "OpenJKDF2 $RELEASE_TAG" --generate-notes ||
             gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
           gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber Mysteries_of_the_Sith-android-arm64-v8a.apk
