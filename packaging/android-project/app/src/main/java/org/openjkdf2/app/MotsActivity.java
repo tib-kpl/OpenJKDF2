@@ -292,7 +292,7 @@ public class MotsActivity extends SDLActivity {
         }
 
         // Pass other keys to SDL
-        if (SDLControllerManager.handleKeyEvent(event)) return true;
+        if (SDLActivity.handleKeyEvent(getWindow().getDecorView(), event.getKeyCode(), event, null)) return true;
 
         return super.dispatchKeyEvent(event);
     }

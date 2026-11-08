@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.DocumentsContract;
+import android.provider.Settings;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -289,7 +290,7 @@ public class GameActivity extends SDLActivity {
         }
 
         // Pass other keys to SDL
-        if (SDLControllerManager.handleKeyEvent(event)) return true;
+        if (SDLActivity.handleKeyEvent(getWindow().getDecorView(), event.getKeyCode(), event, null)) return true;
 
         return super.dispatchKeyEvent(event);
     }

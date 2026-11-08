@@ -17,6 +17,7 @@
     <string name="folder_not_mots">This folder doesn\'t contain Mysteries of the Sith (Episode/JKM.GOO and Resource/JK_.CD).</string>
     <string name="setup_message_jk">Jedi Knight files not found. Please select the game folder.</string>
     <string name="setup_message_mots">Mysteries of the Sith files not found. Please select the game folder.</string>
+    <string name="setup_choose_folder">Choose folder</string>
 
     <!-- Overlay Settings Menu -->
     <string name="menu_controls">Commandes</string>
