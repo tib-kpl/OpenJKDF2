@@ -28,6 +28,8 @@ final class GameSettingsMenu extends Dialog {
 
     private final Activity activity;
     private final boolean bMots;
+    // Standalone: used by SetupActivity (game folder question) instead of as an in-game overlay
+    private final boolean standalone;
     private final int accent;
     private final int ink = 0xffeeeae1;
     private final int muted = 0xffa5a8aa;
@@ -50,9 +52,14 @@ final class GameSettingsMenu extends Dialog {
     void setResultCallback(Result callback) { this.resultCallback = callback; }
 
     GameSettingsMenu(Activity activity, boolean bMots) {
+        this(activity, bMots, false);
+    }
+
+    GameSettingsMenu(Activity activity, boolean bMots, boolean standalone) {
         super(activity, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
         this.activity = activity;
         this.bMots = bMots;
+        this.standalone = standalone;
         // JK: orange accent, MoTS: purple accent
         this.accent = bMots ? 0xff9b59b6 : 0xffe67e22;
         setCanceledOnTouchOutside(false);
@@ -109,7 +116,7 @@ final class GameSettingsMenu extends Dialog {
         logo.setContentDescription(title);
         rail.addView(logo, new LinearLayout.LayoutParams(-1, dp(52)));
 
-        TextView overline = label(text("PARAMÈTRES", "SETTINGS"), 11, muted);
+        TextView overline = label(standalone ? text("CONFIGURATION", "SETUP") : text("PARAMÈTRES", "SETTINGS"), 11, muted);
         overline.setPadding(dp(10), dp(20), 0, dp(10));
         rail.addView(overline);
 
@@ -139,14 +146,14 @@ final class GameSettingsMenu extends Dialog {
             tabList.addView(button, lp);
             tabs.add(button);
         }
-        Button resume = action(text("Reprendre", "Resume"), this::dismiss);
+        Button resume = action(standalone ? text("Quitter", "Quit") : text("Reprendre", "Resume"), this::dismiss);
         resume.setBackground(primaryBackground());
         resume.setTextColor(bMots ? 0xff1f1229 : 0xff292218);
         rail.addView(resume, new LinearLayout.LayoutParams(-1, dp(46)));
         TextView close = label("Select + Start", 11, muted);
         close.setGravity(Gravity.CENTER);
         close.setPadding(0, dp(9), 0, 0);
-        rail.addView(close);
+        if (!standalone) rail.addView(close);
 
         LinearLayout content = new LinearLayout(activity);
         content.setOrientation(LinearLayout.VERTICAL);
@@ -156,7 +163,8 @@ final class GameSettingsMenu extends Dialog {
         heading.setGravity(Gravity.CENTER_VERTICAL);
         LinearLayout pageHeading = new LinearLayout(activity);
         pageHeading.setOrientation(LinearLayout.VERTICAL);
-        TextView eyebrow = label(text("OPTIONS DU JEU", "GAME OPTIONS"), 11, accent);
+        TextView eyebrow = label(standalone ? text("FICHIERS DU JEU", "GAME FILES")
+                : text("OPTIONS DU JEU", "GAME OPTIONS"), 11, accent);
         if (Build.VERSION.SDK_INT >= 21) eyebrow.setLetterSpacing(.12f);
         pageHeading.addView(eyebrow);
         pageTitle = label("", 24, ink);
@@ -166,7 +174,7 @@ final class GameSettingsMenu extends Dialog {
         TextView shoulders = label("L1   /   R1", 11, muted);
         shoulders.setPadding(dp(10), dp(7), dp(10), dp(7));
         shoulders.setBackground(plate(0xff24272b, 0xff383b3d));
-        heading.addView(shoulders);
+        if (!standalone) heading.addView(shoulders);
         content.addView(heading);
         View divider = new View(activity);
         divider.setBackgroundColor(0xff3a3b3b);
@@ -185,7 +193,8 @@ final class GameSettingsMenu extends Dialog {
         rows.setPadding(dp(1), 0, dp(1), dp(6));
         scroll.addView(rows);
         content.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
-        TextView hint = label(text("A  Choisir       ← →  Ajuster       B  Reprendre",
+        TextView hint = label(standalone ? text("A  Choisir       B  Quitter", "A  Select       B  Quit")
+                : text("A  Choisir       ← →  Ajuster       B  Reprendre",
                 "A  Select       ← →  Adjust       B  Resume"), 11, muted);
         hint.setPadding(0, dp(10), 0, 0);
         content.addView(hint);
@@ -390,6 +399,34 @@ final class GameSettingsMenu extends Dialog {
         row.setContentDescription(value);
         row.setOnClickListener(v -> clicked.run());
         addRow(row);
+    }
+
+    /** Highlighted action (same look as the rail's Resume button). */
+    void primaryButton(String value, Runnable clicked) {
+        Button button = action(value, clicked);
+        button.setBackground(primaryBackground());
+        button.setTextColor(bMots ? 0xff1f1229 : 0xff292218);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(46));
+        lp.bottomMargin = dp(7);
+        rows.addView(button, lp);
+    }
+
+    /** Single-line text field in the menu style. */
+    android.widget.EditText input(String initial, Runnable submitted) {
+        android.widget.EditText field = new android.widget.EditText(activity);
+        field.setSingleLine(true);
+        field.setText(initial);
+        field.setSelection(field.getText().length());
+        field.setTextSize(13); field.setTextColor(ink);
+        field.setTypeface(Typeface.MONOSPACE);
+        field.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_DONE);
+        field.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_URI);
+        field.setFocusable(true); field.setFocusableInTouchMode(true);
+        field.setPadding(dp(12), dp(12), dp(12), dp(12));
+        field.setBackground(cardBackground());
+        field.setOnEditorActionListener((v, action, event) -> { submitted.run(); return true; });
+        addRow(field);
+        return field;
     }
 
     private void addRow(View view) {

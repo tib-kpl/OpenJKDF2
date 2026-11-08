@@ -2,7 +2,6 @@ package org.openjkdf2.app;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -13,9 +12,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.Settings;
-import android.text.InputType;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import java.io.File;
@@ -35,7 +32,8 @@ public class SetupActivity extends Activity {
     private boolean mMots;
     private boolean mForcePick;
     private boolean mAwaitingPermission;
-    private AlertDialog mDialog;
+    private GameSettingsMenu mMenu;
+    private boolean mQuitOnDismiss;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +45,7 @@ public class SetupActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (mDialog != null && mDialog.isShowing()) {
+        if (mMenu != null && mMenu.isShowing()) {
             return;
         }
         if (mAwaitingPermission) {
@@ -64,9 +62,10 @@ public class SetupActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        if (mDialog != null) {
-            mDialog.dismiss();
-            mDialog = null;
+        if (mMenu != null) {
+            mQuitOnDismiss = false; // leaving for the picker/settings: onResume asks again
+            mMenu.dismiss();
+            mMenu = null;
         }
     }
 
@@ -83,45 +82,41 @@ public class SetupActivity extends Activity {
         showPathDialog(saved, saved != null && !mForcePick);
     }
 
+    /** The question, drawn with the same menu as the in-game settings. */
     private void showPathDialog(String initial, boolean bWasInvalid) {
-        final EditText input = new EditText(this);
-        input.setSingleLine(true);
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
-        input.setText(initial != null ? initial : Environment.getExternalStorageDirectory().getPath());
-        input.setSelection(input.getText().length());
-        LinearLayout box = new LinearLayout(this);
-        int pad = (int) (16 * getResources().getDisplayMetrics().density);
-        box.setPadding(pad, pad / 2, pad, 0);
-        box.addView(input, new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-
-        String message = getString(mMots ? R.string.setup_message_mots : R.string.setup_message_jk);
-        if (bWasInvalid) {
-            message = getString(R.string.setup_folder_invalid, initial) + "\n\n" + message;
-        }
-        mDialog = new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle(R.string.setup_title)
-            .setMessage(message)
-            .setView(box)
-            .setCancelable(false)
-            .setPositiveButton(android.R.string.ok, null) // overridden below: keep the dialog open on error
-            .setNeutralButton(R.string.setup_browse, (d, w) -> openFolderPicker())
-            .setNegativeButton(android.R.string.cancel, (d, w) -> finish())
-            .create();
-        mDialog.show();
-        mDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            String path = input.getText().toString().trim();
-            while (path.length() > 1 && path.endsWith("/")) {
-                path = path.substring(0, path.length() - 1);
-            }
-            if (!GameFolders.isGameDir(new File(path), mMots)) {
-                Toast.makeText(this, mMots ? R.string.folder_not_mots : R.string.folder_not_jk,
-                               Toast.LENGTH_LONG).show();
-                return;
-            }
-            GameFolders.setPicked(this, mMots, path);
-            startGame();
+        mMenu = new GameSettingsMenu(this, mMots, true);
+        mQuitOnDismiss = true;
+        mMenu.setResultCallback(result -> {
+            if (mQuitOnDismiss) finish();
         });
+        final String start = initial != null ? initial : Environment.getExternalStorageDirectory().getPath();
+        mMenu.page(getString(R.string.menu_game_data), () -> {
+            mMenu.section(getString(R.string.setup_title));
+            if (bWasInvalid) {
+                mMenu.note(getString(R.string.setup_folder_invalid, initial));
+            }
+            mMenu.note(getString(mMots ? R.string.setup_message_mots : R.string.setup_message_jk));
+            final EditText[] input = new EditText[1];
+            Runnable submit = () -> {
+                String path = input[0].getText().toString().trim();
+                while (path.length() > 1 && path.endsWith("/")) {
+                    path = path.substring(0, path.length() - 1);
+                }
+                if (!GameFolders.isGameDir(new File(path), mMots)) {
+                    Toast.makeText(this, mMots ? R.string.folder_not_mots : R.string.folder_not_jk,
+                                   Toast.LENGTH_LONG).show();
+                    return;
+                }
+                GameFolders.setPicked(this, mMots, path);
+                mQuitOnDismiss = false;
+                mMenu.dismiss();
+                startGame();
+            };
+            input[0] = mMenu.input(start, submit);
+            mMenu.button(getString(R.string.setup_browse), this::openFolderPicker);
+            mMenu.primaryButton(getString(android.R.string.ok), submit);
+        });
+        mMenu.show(0);
     }
 
     private void startGame() {

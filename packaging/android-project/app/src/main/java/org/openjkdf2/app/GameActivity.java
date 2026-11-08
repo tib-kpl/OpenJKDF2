@@ -23,12 +23,14 @@ public class GameActivity extends SDLActivity {
     private GameSettingsMenu mSettingsMenu;
     private boolean mSelectHeld, mStartHeld;
     private boolean mRestarting;
+    private ControllerProfiles mControllers;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // Before SDL starts the native main: tell it where the game is
         GameFolders.exportToEnvironment(this);
         super.onCreate(savedInstanceState);
+        mControllers = new ControllerProfiles(this);
 
         mSettingsGear = AndroidSettingsGear.install(this, this::openSettingsMenu, false);
     }
@@ -89,6 +91,7 @@ public class GameActivity extends SDLActivity {
         mSettingsMenu.section(getString(R.string.menu_touch_controls));
         mSettingsMenu.note(getString(R.string.menu_touch_note));
         mSettingsMenu.note(getString(R.string.menu_controller_note));
+        mControllers.buildSection(mSettingsMenu);
     }
 
     private void buildComfortPage() {
@@ -151,7 +154,10 @@ public class GameActivity extends SDLActivity {
         }
 
         // Pass other keys to SDL
-        if (SDLActivity.handleKeyEvent(getWindow().getDecorView(), event.getKeyCode(), event, null)) return true;
+        // Per-controller button mapping (settings menu > Controls)
+        int output = mControllers.translate(event);
+        if (output == ControllerProfiles.DISABLED) return true;
+        if (SDLActivity.handleKeyEvent(getWindow().getDecorView(), output, event, null)) return true;
 
         return super.dispatchKeyEvent(event);
     }
@@ -177,6 +183,7 @@ public class GameActivity extends SDLActivity {
         // Reset chord state
         mSelectHeld = false;
         mStartHeld = false;
+        mControllers.clearHeld();
         // Dismiss settings menu if showing
         if (mSettingsMenu != null && mSettingsMenu.isShowing()) {
             mSettingsMenu.dismiss();
