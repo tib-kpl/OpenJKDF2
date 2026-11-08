@@ -11,4 +11,25 @@
     <string name="folder_bad_location">Choisissez un dossier dans la mémoire de l\'appareil ou sur une carte SD.</string>
     <string name="folder_not_jk">Ce dossier ne contient pas Jedi Knight (Episode/JK1.GOB et Resource/JK_.CD).</string>
     <string name="folder_not_mots">Ce dossier ne contient pas Mysteries of the Sith (Episode/JKM.GOO et Resource/JK_.CD).</string>
+
+    <!-- Overlay Settings Menu -->
+    <string name="menu_controls">Commandes</string>
+    <string name="menu_comfort">Confort</string>
+    <string name="menu_video">Vidéo</string>
+    <string name="menu_game">Jeu</string>
+    <string name="menu_touch_controls">Commandes tactiles</string>
+    <string name="menu_touch_note">L\'icône d\'engrenage ouvre ce menu en mode tactile. En manette : Select + Start.</string>
+    <string name="menu_controller_note">Manette détectée : les contrôles natifs sont actifs.</string>
+    <string name="menu_camera_comfort">Confort de la caméra</string>
+    <string name="menu_camera_note">Les réglages s\'appliquent au retour au jeu.</string>
+    <string name="menu_display">Affichage</string>
+    <string name="menu_display_note">La taille s\'adapte à la résolution. Les réglages s\'appliquent au retour au jeu.</string>
+    <string name="menu_game_data">Fichiers du jeu</string>
+    <string name="menu_change_folder">Changer de dossier…</string>
+    <string name="menu_confirm_change_folder">Quitter la partie et ouvrir le sélecteur de dossier ? Les fichiers actuels seront conservés.</string>
+    <string name="menu_continue">Continuer</string>
+    <string name="menu_defaults">Réglages par défaut</string>
+    <string name="menu_reset_settings">Réinitialiser les réglages…</string>
+    <string name="menu_confirm_reset">Rétablir les valeurs par défaut ? La disposition tactile, les fichiers et les sauvegardes seront conservés.</string>
+    <string name="menu_reset">Réinitialiser</string>
 </resources>

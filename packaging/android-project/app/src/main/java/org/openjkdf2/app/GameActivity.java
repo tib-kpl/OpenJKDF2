@@ -12,6 +12,10 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.Settings;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.InputDevice;
 import android.widget.Toast;
 
 import java.io.File;
@@ -32,11 +36,19 @@ public class GameActivity extends SDLActivity {
     private boolean mAwaitingPermission;
     private boolean mReturnToSetup;
 
+    // Overlay settings menu (Unreal-Android style)
+    private View mSettingsGear;
+    private GameSettingsMenu mSettingsMenu;
+    private boolean mSelectHeld, mStartHeld;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // Before SDL starts the native main: tell it where the game is
         GameFolders.exportToEnvironment(this);
         super.onCreate(savedInstanceState);
+
+        // Install the overlay settings gear (touch) - JK uses blue theme
+        mSettingsGear = AndroidSettingsGear.install(this, this::openSettingsMenu, false);
     }
 
     @Override
@@ -216,6 +228,127 @@ public class GameActivity extends SDLActivity {
 
     private void startGame() {
         // Game starts automatically via SDL
+    }
+
+    private void openSettingsMenu() {
+        if (mSettingsMenu != null && mSettingsMenu.isShowing()) return;
+        mSettingsMenu = new GameSettingsMenu(this, false);
+        buildSettingsPages();
+        mSettingsMenu.setResultCallback(result -> handleSettingsResult(result));
+        mSettingsMenu.show(-1);
+    }
+
+    private void handleSettingsResult(int result) {
+        if (result == GameSettingsMenu.CHANGE_FOLDER) {
+            openFolderPicker();
+        }
+        // Other results handled inline
+    }
+
+    private void buildSettingsPages() {
+        mSettingsMenu.page(getString(R.string.menu_controls), () -> buildControlsPage());
+        mSettingsMenu.page(getString(R.string.menu_comfort), () -> buildComfortPage());
+        mSettingsMenu.page(getString(R.string.menu_video), () -> buildVideoPage());
+        mSettingsMenu.page(getString(R.string.menu_game), () -> buildGamePage());
+    }
+
+    private void buildControlsPage() {
+        mSettingsMenu.section(getString(R.string.menu_touch_controls));
+        mSettingsMenu.note(getString(R.string.menu_touch_note));
+        mSettingsMenu.note(getString(R.string.menu_controller_note));
+    }
+
+    private void buildComfortPage() {
+        mSettingsMenu.section(getString(R.string.menu_camera_comfort));
+        mSettingsMenu.note(getString(R.string.menu_camera_note));
+    }
+
+    private void buildVideoPage() {
+        mSettingsMenu.section(getString(R.string.menu_display));
+        mSettingsMenu.note(getString(R.string.menu_display_note));
+    }
+
+    private void buildGamePage() {
+        mSettingsMenu.section(getString(R.string.menu_game_data));
+        File root = GameFolders.resolve(this, false);
+        mSettingsMenu.path(root != null ? root.getAbsolutePath() : getString(R.string.setup_not_found));
+        mSettingsMenu.button(getString(R.string.menu_change_folder), () -> {
+            mSettingsMenu.confirm(getString(R.string.menu_confirm_change_folder),
+                    getString(R.string.menu_continue), () -> {
+                        mSettingsMenu.setResult(GameSettingsMenu.CHANGE_FOLDER);
+                        mSettingsMenu.dismiss();
+                        openFolderPicker();
+                    });
+        });
+        mSettingsMenu.section(getString(R.string.menu_defaults));
+        mSettingsMenu.button(getString(R.string.menu_reset_settings), () ->
+                mSettingsMenu.confirm(getString(R.string.menu_confirm_reset),
+                        getString(R.string.menu_reset), () -> {
+                            mSettingsMenu.setResult(GameSettingsMenu.RESET_SETTINGS);
+                            mSettingsMenu.dismiss();
+                            // Reset preferences
+                            getPreferences(MODE_PRIVATE).edit().clear().commit();
+                        }));
+    }
+
+    // Select + Start chord detection (Unreal-Android style)
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        int code = event.getKeyCode();
+        boolean down = event.getAction() == KeyEvent.ACTION_DOWN;
+
+        // Handle Select + Start chord to open/close settings menu
+        if (code == KeyEvent.KEYCODE_BUTTON_SELECT || code == KeyEvent.KEYCODE_BUTTON_START) {
+            if (!down || event.getRepeatCount() == 0) {
+                if (code == KeyEvent.KEYCODE_BUTTON_SELECT) mSelectHeld = down;
+                else mStartHeld = down;
+                if (mSelectHeld && mStartHeld) {
+                    if (mSettingsMenu != null && mSettingsMenu.isShowing()) {
+                        mSettingsMenu.dismiss();
+                    } else {
+                        openSettingsMenu();
+                    }
+                }
+            }
+            return true;
+        }
+
+        // Let the settings menu handle its own keys if showing
+        if (mSettingsMenu != null && mSettingsMenu.isShowing()) {
+            if (mSettingsMenu.dispatchKeyEvent(event)) return true;
+        }
+
+        // Pass other keys to SDL
+        if (SDLControllerManager.handleKeyEvent(event)) return true;
+
+        return super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public boolean dispatchGenericMotionEvent(MotionEvent event) {
+        // Let the settings menu handle controller motion if showing
+        if (mSettingsMenu != null && mSettingsMenu.isShowing()) {
+            if (mSettingsMenu.dispatchGenericMotionEvent(event)) return true;
+        }
+        // Pass to SDL
+        if (event.getSource() == InputDevice.SOURCE_JOYSTICK) {
+            if (SDLControllerManager.handleJoystickMotionEvent(event)) {
+                return true;
+            }
+        }
+        return super.dispatchGenericMotionEvent(event);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Reset chord state
+        mSelectHeld = false;
+        mStartHeld = false;
+        // Dismiss settings menu if showing
+        if (mSettingsMenu != null && mSettingsMenu.isShowing()) {
+            mSettingsMenu.dismiss();
+        }
     }
 
     // Added: fallback joystick-motion dispatch. SDL's generic-motion listener lives on
