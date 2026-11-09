@@ -33,8 +33,25 @@ env:
   IS_RELEASE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
 
 jobs:
+  # Create the release once, before the platform jobs start: they used to race
+  # on "view || create" and could each create a release for the same tag
+  # (duplicate v1.0.N).
+  release:
+    name: Create release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RELEASE_TAG="v1.0.${{ github.run_number }}"
+          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
+            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"               --title "OpenJKDF2 $RELEASE_TAG" --generate-notes
+
   linux:
     name: Linux (Ubuntu 24.04)
+    needs: release
     runs-on: ubuntu-24.04
     env:
       OPENJKDF2_BUILD_DIR: /tmp/OpenJKDF2/Linux/x86_64/Release
@@ -88,15 +105,11 @@ jobs:
         run: |
           # Semantic version tag for Obtainium (v1.0.<run_number>)
           RELEASE_TAG="v1.0.${{ github.run_number }}"
-          # Create or get release with semantic version tag
-          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
-            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title "OpenJKDF2 $RELEASE_TAG" --generate-notes ||
-            gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
           gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber OpenJKDF2-linux-x86_64.tar.gz
 
   macos:
     name: macOS
+    needs: release
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -132,15 +145,11 @@ jobs:
         run: |
           # Semantic version tag for Obtainium (v1.0.<run_number>)
           RELEASE_TAG="v1.0.${{ github.run_number }}"
-          # Create or get release with semantic version tag
-          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
-            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title "OpenJKDF2 $RELEASE_TAG" --generate-notes ||
-            gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
           gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber OpenJKDF2-macos-arm64.zip
 
   win64:
     name: Windows x64
+    needs: release
     runs-on: ubuntu-24.04
     env:
       OPENJKDF2_BUILD_DIR: build_win64
@@ -204,15 +213,11 @@ jobs:
         run: |
           # Semantic version tag for Obtainium (v1.0.<run_number>)
           RELEASE_TAG="v1.0.${{ github.run_number }}"
-          # Create or get release with semantic version tag
-          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
-            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title "OpenJKDF2 $RELEASE_TAG" --generate-notes ||
-            gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
           gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber OpenJKDF2-win64.zip
 
   android-jk:
     name: Android arm64 (Jedi Knight)
+    needs: release
     runs-on: ubuntu-24.04
     env:
       OPENJKDF2_BUILD_DIR: build_android_aarch64
@@ -286,15 +291,11 @@ jobs:
         run: |
           # Semantic version tag for Obtainium (v1.0.<run_number>)
           RELEASE_TAG="v1.0.${{ github.run_number }}"
-          # Create or get release with semantic version tag
-          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
-            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title "OpenJKDF2 $RELEASE_TAG" --generate-notes ||
-            gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
           gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber Jedi_Knight-android-arm64-v8a.apk
 
   android-mots:
     name: Android arm64 (Mysteries of the Sith)
+    needs: release
     runs-on: ubuntu-24.04
     env:
       OPENJKDF2_BUILD_DIR: build_android_aarch64_mots
@@ -368,9 +369,4 @@ jobs:
         run: |
           # Semantic version tag for Obtainium (v1.0.<run_number>)
           RELEASE_TAG="v1.0.${{ github.run_number }}"
-          # Create or get release with semantic version tag
-          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
-            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title "OpenJKDF2 $RELEASE_TAG" --generate-notes ||
-            gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null
           gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber Mysteries_of_the_Sith-android-arm64-v8a.apk
