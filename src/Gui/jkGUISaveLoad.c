@@ -26,7 +26,7 @@
 
 static int32_t jkGuiSaveLoad_listIdk[2] = {0xd, 0xe};
 
-// Added: "level_YYYY-MM-DD_HH-MM-SS", used as default save name and file name
+// Added: "YYYY-MM-DD_HH-MM-SS_level", used as default save name and file name
 static char jkGuiSaveLoad_autoName[80];
 
 static void jkGuiSaveLoad_BuildAutoName(char* out, size_t outSize)
@@ -65,10 +65,10 @@ static void jkGuiSaveLoad_BuildAutoName(char* out, size_t outSize)
     }
     level[n] = 0;
 
-    snprintf(out, outSize, "%s%s%04d-%02d-%02d_%02d-%02d-%02d",
-             level, n ? "_" : "",
+    snprintf(out, outSize, "%04d-%02d-%02d_%02d-%02d-%02d%s%s",
              tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-             tm->tm_hour, tm->tm_min, tm->tm_sec);
+             tm->tm_hour, tm->tm_min, tm->tm_sec,
+             n ? "_" : "", level);
 }
 
 static jkGuiElement jkGuiSaveLoad_aElements[15] = {
@@ -335,7 +335,7 @@ int jkGuiSaveLoad_SaveSort(const void* a_, const void* b_)
     if ( !a->str )
         return 1;
     if ( b->str )
-        return __wcsicmp(a->str, b->str);
+        return __wcsicmp(b->str, a->str); // Added: descending, newest (date-first name) on top
     return -1;
 }
 
