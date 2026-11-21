@@ -102,6 +102,8 @@ MSGS 117          # <--- DON'T FORGET TO UPDATE THIS COUNT
    "GUIEXT_LEDGE_SQUEEZE"                       0 "Ease climbing onto ledges"
    "GUIEXT_LEDGE_SQUEEZE_HINT"                  0 "Shrink the player collider while midair so it catches less on gap corners?"
 
+   "GUIEXT_SHOW_CUTSCENES"						0 "Show Cutscenes"
+
 #******************************
 #  Controls
 #******************************
